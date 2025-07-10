@@ -1,3 +1,17 @@
+---
+jupytext:
+  formats: md:myst
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.11.5
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
+---
+
 ### 一、 輸入行為的歷史與物質性
 
 在今日中文使用者與電腦之間，看似自然的打字行為，建立在一連串複雜且高度政治化的技術中介之上。中文輸入法、資訊交換碼與鍵盤設計等技術元件，不僅形構了輸入行為的具體實作，也深刻反映了國族語言政策、身體協作技術與使用者經驗的歷史變遷。中文輸入法與資訊交換標準的歷史，長期以來位於科技發展與語言政策的交會點，卻在科技史與物質文化研究中鮮有深入探討。僅有少數學術著作將之視為具有文化與政治意涵的技術物。<br>
