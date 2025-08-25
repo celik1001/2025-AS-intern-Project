@@ -9,12 +9,6 @@ Research and Implementation of Web Archive Indexing: Building an Apple Daily Cat
 
 ## 摘要
 
-👌 我幫你把這份介紹潤飾一下，讓它更清晰、結構更完整，適合放在專題計畫或報告的「研究動機／方法」部分。
-
----
-
-# 中文版（修訂後）
-
 本專題旨在探討如何運用 **Internet Archive 所提供的 CDX API**，為《蘋果新聞網》（Apple Daily Taiwan）建立一套文章存檔的編目流程。隨著《蘋果日報》於 2021 年停刊，其網站內容逐漸消失，僅能透過 Internet Archive 及 Archive Team 等社群力量加以保存。雖然使用者仍能透過 **Wayback Machine** 存取單頁快取，但對於研究者而言，新聞檢索與系統化分析並不容易。先前已有暑期實習生利用 Archive Team 保存的 WARC 檔嘗試建立索引，但經過兩輪整理後，仍有超過三十萬篇新聞未能收錄，顯示現有方法存在明顯缺口。
 
 本研究將以 **CDX API** 為主要工具，蒐集《蘋果新聞網》的快取清單，並依日期與版別（如生活、國際、娛樂等）加以分類，初步聚焦於 **2022 年 1 月至 8 月的本土新聞版**，建立一份可檢索的文章索引。在此基礎上，進一步比對 **CDX API 所揭示的快取** 與 **ArchiveBot WARC 檔**，檢視兩者在存檔完整性上的差異，並探討造成落差的可能因素，例如跨日抓取、robots.txt 政策限制、種子範圍設定與使用者透過 Save Page Now 所提交的快取等。
