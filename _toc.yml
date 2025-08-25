@@ -4,8 +4,4 @@
 format: jb-book
 root: intro
 chapters:
-  - file: markdown
-  - file: notebooks
-  - file: markdown-notebooks
-  - file: invisible-infra
-  - file: wikidata-quickstatement-guide
+  - file: preface
