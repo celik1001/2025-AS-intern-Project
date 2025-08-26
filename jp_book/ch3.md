@@ -23,3 +23,7 @@ source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
 請先透過命令列或anacoda 安裝jupyter notebook。
 另外，這支程式會使用`requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動，在開始之前，也請先安裝。
 ```
+
+## Input
+
+## 輸出結果

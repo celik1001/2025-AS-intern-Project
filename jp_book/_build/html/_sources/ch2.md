@@ -23,3 +23,7 @@ source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
 這支程式會使用 `requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動。
 在開始之前，請透過命令列先安裝以上套件/環境
 ```
+
+## Input
+
+## 輸出結果

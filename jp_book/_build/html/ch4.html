@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>使用 CDX api 查找 時間範圍內的網址內容 &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
+    <title>Output &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
   
   
   
@@ -57,11 +57,9 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'ch2';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ch4';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔" href="ch3.html" />
-    <link rel="prev" title="研究問題、方法及流程" href="ch1.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -124,6 +122,8 @@
       
       
       
+        
+      
       <div class="bd-sidebar-primary bd-sidebar">
         
 
@@ -179,11 +179,11 @@
                 </a>
             </li>
         </ul>
-        <ul class="current nav bd-sidenav">
+        <ul class="nav bd-sidenav">
 <li class="toctree-l1"><a class="reference internal" href="summary.html">專題題目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch0.html">前言</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch1.html">研究問題、方法及流程</a></li>
-<li class="toctree-l1 current active"><a class="current reference internal" href="#">使用 CDX api 查找 時間範圍內的網址內容</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ch2.html">使用 CDX api 查找 時間範圍內的網址內容</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch3.html">使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔</a></li>
 </ul>
 
@@ -256,7 +256,7 @@
       
       
       
-      <li><a href="https://github.com/celik1001/2025-AS-intern-Project.git/issues/new?title=Issue%20on%20page%20%2Fch2.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/celik1001/2025-AS-intern-Project.git/issues/new?title=Issue%20on%20page%20%2Fch4.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -286,7 +286,7 @@
       
       
       
-      <li><a href="_sources/ch2.md" target="_blank"
+      <li><a href="_sources/ch4.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -370,7 +370,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>使用 CDX api 查找 時間範圍內的網址內容</h1>
+    <h1>Output</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -380,9 +380,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
             </nav>
         </div>
@@ -394,35 +392,114 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="cdx-api">
-<h1>使用 CDX api 查找 時間範圍內的網址內容<a class="headerlink" href="#cdx-api" title="Link to this heading">#</a></h1>
-<section id="id1">
-<h2>簡介<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
-<p>這支程式的目的是協助使用者獲得特定年月、類別的文章列表，
-透過 Wayback CDX API 與<code class="docutils literal notranslate"><span class="pre">requests</span></code>取得文章 url、Wayback 快取的網址、文章 id，能夠初步查看總共有哪些文章。</p>
-<p>為了加快速度，使用了多執行緒來加快程式運作。</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>以下皆是在Python3中執行。
-在開始之前，建議先開一個虛擬環境，避免衝突。</p>
-</div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python3</span> <span class="o">-</span><span class="n">m</span> <span class="n">venv</span> <span class="o">.</span><span class="n">venv</span>  <span class="c1"># 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)</span>
-<span class="n">source</span> <span class="o">.</span><span class="n">venv</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">activate</span> <span class="c1"># 啟動虛擬環境 macOS / Linux</span>
-<span class="o">.</span><span class="n">venv</span>\<span class="n">Scripts</span>\<span class="n">activate</span> <span class="c1"># Windows</span>
+  <section class="tex2jax_ignore mathjax_ignore" id="output">
+<h1>Output<a class="headerlink" href="#output" title="Link to this heading">#</a></h1>
+<p>將擷取的內容轉成 ninjs3.0</p>
+<section id="ninjs3-0">
+<h2>ninjs3.0 範例<a class="headerlink" href="#ninjs3-0" title="Link to this heading">#</a></h2>
+<p>Referance
+<a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/20231008-anti-doping-measures-at-the-tour-down-under-will-be-the-toughest-ever-addb-ninjs-nitf.json">iptc/newsinjson</a>
+<a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20130731006140.json">iptc/newsinjson</a>
+<a class="reference external" href="https://www.iptc.org/std/ninjs/userguide/#_multimedia_example">https://www.iptc.org/std/ninjs/userguide/#_multimedia_example</a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="s2">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;URL from warc&quot;</span><span class="p">,</span>
+<span class="s2">&quot;standard&quot;</span><span class="p">:</span> <span class="p">{</span>
+<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ninjs&quot;</span><span class="p">,</span>
+<span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;3.0&quot;</span><span class="p">,</span>
+<span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="s2">&quot;https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json&quot;</span>
+<span class="p">},</span>
+<span class="s2">&quot;firstcreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
+<span class="s2">&quot;versioncreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
+<span class="s2">&quot;contentcreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
+<span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;zh-Hant-TW&quot;</span>
+<span class="s2">&quot;headlines&quot;</span><span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;This is Headline&quot;</span>
+<span class="p">}</span>
+<span class="p">],</span>
+<span class="s2">&quot;subjects&quot;</span><span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Crime, law and justice&quot;</span>
+<span class="p">}</span>
+<span class="p">],</span>
+<span class="s2">&quot;bodies&quot;</span><span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
+<span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;text/plain&quot;</span><span class="p">,</span>
+<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;body content &quot;</span>
+<span class="p">}</span>
+<span class="p">],</span>
+<span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mainpic&quot;</span><span class="p">,</span>
+<span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
+<span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
+<span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
+<span class="p">}</span>
+<span class="p">],</span>
+<span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./ID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
+<span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+
+                <span class="p">}</span>
+              <span class="p">]</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+              <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;firstpic&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                      <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
+                <span class="p">}</span>
+              <span class="p">],</span>
+              <span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                  <span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./ID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+
+                <span class="p">}</span>
+              <span class="p">]</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+              <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;secondpic....&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
+              <span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                      <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
+                <span class="p">}</span>
+              <span class="p">],</span>
+              <span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
+                <span class="p">{</span>
+                  <span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./PID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
+                  <span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+
+                <span class="p">}</span>
+              <span class="p">]</span>
+        <span class="p">}</span>
+
+<span class="p">],</span>
+<span class="s2">&quot;by&quot;</span><span class="p">:</span> <span class="s2">&quot;by whom&quot;</span><span class="p">,</span>
+<span class="s2">&quot;located&quot;</span><span class="p">:</span> <span class="s2">&quot;place name&quot;</span><span class="p">,</span>
+<span class="s2">&quot;altids&quot;</span><span class="p">:</span> <span class="p">[</span>
+<span class="p">{</span>
+<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;internal&quot;</span><span class="p">,</span>
+<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;TNT3L7GJIB7M3WEDXNIS3MYPGI&quot;</span>
+<span class="p">}</span>
+<span class="p">]</span>
+<span class="p">}</span>
+
 </pre></div>
 </div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>請先透過命令列或anacoda 安裝jupyter notebook。
-這支程式會使用 <code class="docutils literal notranslate"><span class="pre">requests</span></code>、<code class="docutils literal notranslate"><span class="pre">Beautiful</span> <span class="pre">Soup</span></code>這個套件與 Wayback Machine 做互動。
-在開始之前，請透過命令列先安裝以上套件/環境</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
 </div>
-</section>
-<section id="input">
-<h2>Input<a class="headerlink" href="#input" title="Link to this heading">#</a></h2>
-</section>
-<section id="id2">
-<h2>輸出結果<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
 </section>
 </section>
 
@@ -456,24 +533,6 @@ document.write(`
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="left-prev"
-       href="ch1.html"
-       title="previous page">
-      <i class="fa-solid fa-angle-left"></i>
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">研究問題、方法及流程</p>
-      </div>
-    </a>
-    <a class="right-next"
-       href="ch3.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               
@@ -490,9 +549,7 @@ document.write(`
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
   </nav></div>
 
