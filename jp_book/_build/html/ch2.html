@@ -355,7 +355,9 @@ document.write(`
   </button>
 `);
 </script>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -371,6 +373,14 @@ document.write(`
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -382,9 +392,30 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="cdx-api">
 <h1>使用 CDX api 查找 時間範圍內的網址內容<a class="headerlink" href="#cdx-api" title="Link to this heading">#</a></h1>
-<ol class="arabic simple">
-<li><p>引入套件</p></li>
-</ol>
+<section id="id1">
+<h2>簡介<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<p>這支程式的目的是協助使用者獲得特定年月、類別的文章列表，
+透過 Wayback CDX API 與<code class="docutils literal notranslate"><span class="pre">requests</span></code>取得文章 url、Wayback 快取的網址、文章 id，能夠初步查看總共有哪些文章。</p>
+<p>為了加快速度，使用了多執行緒來加快程式運作。</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>以下皆是在Python3中執行。
+在開始之前，建議先開一個虛擬環境，避免衝突。</p>
+</div>
+<div class="highlight-none notranslate"><div class="highlight"><pre><span></span> python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
+source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
+.venv\Scripts\activate # Windows
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>這支程式會使用 <code class="docutils literal notranslate"><span class="pre">requests</span></code> 這個套件與 Wayback Machine 做互動。
+在開始之前，請先安裝：
+<code class="docutils literal notranslate">&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">requests</span>&#160;&#160;&#160; </code></p>
+</div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span><span class="o">,</span><span class="w"> </span><span class="nn">csv</span><span class="o">,</span><span class="w"> </span><span class="nn">time</span><span class="o">,</span><span class="w"> </span><span class="nn">random</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span><span class="p">,</span> <span class="n">as_completed</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Lock</span>
@@ -479,7 +510,7 @@ document.write(`
         <span class="k">return</span> <span class="n">results</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">fetch_category_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">months</span><span class="p">,</span> <span class="n">category</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;抓取單一分類多個月份的資料&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;catch all month of category&quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting category [</span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">] for months: </span><span class="si">{</span><span class="n">months</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">category_start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
@@ -513,7 +544,7 @@ document.write(`
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">failed_requests</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="n">cat</span><span class="p">))</span>
 
-                    <span class="c1"># 每完成50個請求顯示進度</span>
+                    <span class="c1"># Progress bar process per 50</span>
                     <span class="k">if</span> <span class="n">completed</span> <span class="o">%</span> <span class="mi">50</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">category</span><span class="si">}</span><span class="s2">] Progress: </span><span class="si">{</span><span class="n">completed</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">completed</span><span class="o">/</span><span class="n">total</span><span class="o">*</span><span class="mi">100</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%)&quot;</span><span class="p">)</span>
 
@@ -718,6 +749,7 @@ document.write(`
 </pre></div>
 </div>
 </section>
+</section>
 
     <script type="text/x-thebe-config">
     {
@@ -764,6 +796,21 @@ document.write(`
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>

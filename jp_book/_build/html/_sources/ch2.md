@@ -1,6 +1,32 @@
 # 使用 CDX api 查找 時間範圍內的網址內容
 
-1. 引入套件
+## 簡介
+
+這支程式的目的是協助使用者獲得特定年月、類別的文章列表，
+透過 Wayback CDX API 與`requests`取得文章 url、Wayback 快取的網址、文章 id，能夠初步查看總共有哪些文章。
+
+為了加快速度，使用了多執行緒來加快程式運作。
+
+```{tip}
+以下皆是在Python3中執行。
+在開始之前，建議先開一個虛擬環境，避免衝突。
+```
+
+     python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
+    source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
+    .venv\Scripts\activate # Windows
+
+```
+
+```
+
+````{note}
+這支程式會使用 `requests` 這個套件與 Wayback Machine 做互動。
+在開始之前，請先安裝：
+    ```
+        pip install requests
+    ```
+````
 
 ```python
 import requests, csv, time, random
@@ -99,7 +125,7 @@ class MultiCategoryWaybackScraper:
         return results
 
     def fetch_category_data(self, months, category):
-        """抓取單一分類多個月份的資料"""
+        """catch all month of category"""
         logger.info(f"Starting category [{category}] for months: {months}")
         category_start = time.time()
 
@@ -133,7 +159,7 @@ class MultiCategoryWaybackScraper:
                     else:
                         failed_requests.append((date, cat))
 
-                    # 每完成50個請求顯示進度
+                    # Progress bar process per 50
                     if completed % 50 == 0:
                         logger.info(f"[{category}] Progress: {completed}/{total} ({completed/total*100:.1f}%)")
 
