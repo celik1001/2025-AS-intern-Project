@@ -382,7 +382,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">API</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">套件</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">NINJS3.0 範例</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
 </li>
 </ul>
@@ -405,13 +405,13 @@ document.write(`
 <li><p>90 多萬篇新聞卻只有 60 多萬篇</p></li>
 <li><p>發現 2018 年之後，新聞數量大幅下跌</p></li>
 <li><p>有些種類的新聞很少，可能是早期新聞的分類 ex. daily, news</p></li>
-<li><p>日期只到 2022 的八月十幾號-&gt;但網頁 31 號才停止更新</p></li>
+<li><p>日期只到 2022 的八月十幾號 -&gt; 但網頁 31 號才停止更新</p></li>
 <li><p>有沒有可能有資料沒整理到？</p></li>
 </ul>
 <iframe width="800" height="600" src="https://lookerstudio.google.com/embed/reporting/892b2c90-c9a4-4488-a6f7-559739d5a64c/page/crMUF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 <p>那麼，有哪些內容沒被收到呢？
-以嘗試觀察 appledailyTW 的網址結構，可以知道
-這是本次的專題目標。</p>
+以==https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/==，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是：</p>
+<p>可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。</p>
 <p>因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
 又因 ArchiveTeam 的存檔內容大部分可經由 IA 的 Wayback Machine 存取，因此這邊使用 Wayback CDX API 與 Wayback Machine 互動，透過 BeautifulSoup 來解析、進一步擷取 Wayback Machine 上的網頁存檔內容。</p>
 <p>是以，透過這樣的實驗，希望：</p>
@@ -448,7 +448,7 @@ document.write(`
 分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包</p>
 </section>
 <section id="ninjs3-0">
-<h3>NINJS3.0 範例<a class="headerlink" href="#ninjs3-0" title="Link to this heading">#</a></h3>
+<h3>ninjs3.0 範例<a class="headerlink" href="#ninjs3-0" title="Link to this heading">#</a></h3>
 <p>Referance
 <a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/20231008-anti-doping-measures-at-the-tour-down-under-will-be-the-toughest-ever-addb-ninjs-nitf.json">iptc/newsinjson</a>
 <a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20130731006140.json">iptc/newsinjson</a>
@@ -612,7 +612,7 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">API</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">套件</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">NINJS3.0 範例</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
 </li>
 </ul>
