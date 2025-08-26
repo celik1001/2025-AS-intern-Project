@@ -22,32 +22,126 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-import requests
+# 使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存成
+
+## 簡介
+
+這支程式的目的是協助使用者擷取特定年月、類別的文章列表，
+透過 Wayback CDX API 與`requests`、`BeautifulSoup`取得文章 url、Wayback 快取的網址、文章 id，能夠初步查看總共有哪些文章。
+
+為了加快速度，使用了多執行緒來加快程式運作。
+
+```{tip}
+以下皆是在Python3中執行。
+在開始之前，建議先開一個虛擬環境，避免衝突。
+```
+
+     python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
+    source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
+    .venv\Scripts\activate # Windows
+
+```
+
+```
+
+````{note}
+這支程式會使用 `requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動。
+在開始之前，請先安裝：
+    ```
+        pip install requests BeautifulSoup
+    ```
+````
+
+```python
+import os
+import time
 import json
+import zipfile
+import requests
 import pandas as pd
 from bs4 import BeautifulSoup
-import time
-import logging
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
+```
 
-# ------------------ Logging 設定 ------------------
-logging.basicConfig(
-    filename='wayback.log',
-    filemode='a',
-    level=logging.INFO,
-    format='%(asctime)s [%(levelname)s] %(message)s',
-)
-# ---------------------------------------------------
+```python
+# settings
+INPUT_CSV = "example.csv"  # Input file with article URLs
+URL_FIELD = "uri"
+ID_FIELD = "id"
+THREADS = 5
+N_LIMIT = 10                    # None = all rows
+OUTPUT_PREFIX = "output_"
+SKIP_FILE_NAME = "skipped_urls.txt"
+```
+
+```python
+# Utility functions
+def _only_date(s: str) -> str:
+    """
+    Normalize different datetime formats into YYYY-MM-DD.
+    Supported inputs include:
+    - '20240207123456' (CDX timestamp)
+    - '2024-02-07T12:34:56+08:00'
+    - '2024-02-07 12:34:56'
+    - '2024-02-07'
+    Returns empty string if parsing fails.
+    """
+    if not s:
+        return ""
+    s = s.strip()
+    if s.isdigit() and len(s) == 14:  # CDX format
+        try:
+            return datetime.strptime(s, "%Y%m%d%H%M%S").strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    for fmt in ("%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d"):
+        try:
+            dt = datetime.strptime(s.replace("Z", "+0000"), fmt)
+            return dt.strftime("%Y-%m-%d")
+        except Exception:
+            continue
+    if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+        return s[:10]
+    return ""
 
 
+def _first_path_segment(raw_url: str) -> str:
+    """
+    Return the first path segment of a URL.
+    Example: /local/20200729/... -> 'local'
+    """
+    try:
+        p = urlparse(raw_url)
+        parts = [seg for seg in p.path.split("/") if seg]
+        return parts[0] if parts else ""
+    except Exception:
+        return ""
+
+
+def _ensure_dir(path: str):
+    os.makedirs(path, exist_ok=True)
+```
+
+```python
+# Wayback Scraper
 class WaybackScraper:
-    def __init__(self):
+    def __init__(self, img_root_dir):
         self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
-    
+        self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        self.img_root_dir = img_root_dir
+        _ensure_dir(self.img_root_dir)
+
     def get_latest_snapshot(self, url):
+        """
+        Query the CDX API for the latest snapshot of a given URL.
+        Returns timestamp, original URL, and constructed Wayback URL.
+        """
+        api = "https://web.archive.org/cdx/search/cdx"
         params = {
             'url': url,
             'output': 'json',
@@ -56,7 +150,7 @@ class WaybackScraper:
             'limit': 1
         }
         try:
-            r = self.session.get("https://web.archive.org/cdx/search/cdx", params=params)
+            r = self.session.get(api, params=params, timeout=20)
             r.raise_for_status()
             data = r.json()
             if len(data) > 1:
@@ -67,186 +161,124 @@ class WaybackScraper:
                     'wayback_url': f"https://web.archive.org/web/{row[1]}/{row[2]}"
                 }
         except Exception as e:
-            logging.error(f"[CDX錯誤] {url} → {e}")
+            print(f"[CDX error] {url} → {e}, params={params}")
         return None
 
-    def scrape_webpage_content(self, wayback_url, max_retries=3):
-        for attempt in range(1, max_retries + 1):
-            try:
-                resp = self.session.get(wayback_url, timeout=10)
-                resp.raise_for_status()
-                soup = BeautifulSoup(resp.content, 'html.parser')
-                return {
-                    'url': wayback_url,
-                    'title': self.safe_extract(soup.find('title')),
-                    'h1_tags': [h1.get_text().strip() for h1 in soup.find_all('h1')],
-                    'content': "\n".join([p.get_text().strip() for p in soup.find_all('p') if p.get_text().strip()])
-                }
-            except Exception as e:
-                logging.warning(f"[爬取錯誤] ({attempt}) {wayback_url} → {e}")
-                time.sleep(2)
-        return None
+    def _extract_published_date(self, soup, wayback_ts: str) -> str:
+        """
+        Try to extract a published date from <meta property='article:published_time'>
+        or <time datetime>. Fall back to Wayback timestamp if none are found.
+        """
+        meta = soup.find("meta", attrs={"property": "article:published_time"})
+        if meta and meta.get("content"):
+            d = _only_date(meta.get("content"))
+            if d:
+                return d
+        t = soup.find("time")
+        if t:
+            d = _only_date(t.get("datetime") or t.get_text(strip=True))
+            if d:
+                return d
+        return _only_date(wayback_ts)
 
-    def safe_extract(self, element):
-        return element.get_text().strip() if element else ''
-
-    def format_timestamp(self, ts):
+    def scrape_article(self, wayback_url: str, raw_url: str, wayback_ts: str):
+        """
+        Parse a Wayback snapshot page to extract:
+        - title
+        - body text (concatenated <p> tags)
+        - publication date
+        - category (from URL path)
+        - image URLs (first = cover, rest = others)
+        """
         try:
-            return datetime.strptime(ts, "%Y%m%d%H%M%S").strftime("%Y-%m-%d %H:%M:%S")
-        except:
-            return ts
+            resp = self.session.get(wayback_url, timeout=20)
+            resp.raise_for_status()
+            soup = BeautifulSoup(resp.content, 'html.parser')
 
+            # Title
+            title_tag = soup.find("h1") or soup.find("title")
+            title = title_tag.get_text(strip=True) if title_tag else ""
 
-def main():
-    csv_path = "only_in_b.csv"
-    url_column_name = "uri"
-    N_LIMIT = 50   # None = 全部
+            # Body text
+            bodies = "\n".join(
+                p.get_text().strip()
+                for p in soup.find_all("p")
+                if p.get_text().strip()
+            )
 
-    df = pd.read_csv(csv_path)
-    urls = df[url_column_name].dropna().tolist()
+            # Dates
+            firstcreated = self._extract_published_date(soup, wayback_ts)
+            contentcreated = firstcreated
+            versioncreated = _only_date(wayback_ts)
 
-    if N_LIMIT:
-        urls = urls[:N_LIMIT]
-        logging.info(f"N_LIMIT 開啟，只處理前 {N_LIMIT} 筆")
+            # Collect images
+            all_img_urls = []
+            for img in soup.find_all("img"):
+                src = img.get("src")
+                if not src:
+                    continue
+                if src.startswith("//"):
+                    src = "https:" + src
+                elif not src.startswith("http"):
+                    src = f"https://web.archive.org{src}"
+                if src not in all_img_urls:
+                    all_img_urls.append(src)
 
-    print(f"共讀取 {len(urls)} 個 URL，開始處理…")
-    logging.info(f"開始處理 {len(urls)} 個 URL")
+            subject = _first_path_segment(raw_url)
 
-    scraper = WaybackScraper()
-    all_data = []
+            return {
+                "title": title,
+                "bodies": bodies,
+                "firstcreated": firstcreated,
+                "versioncreated": versioncreated,
+                "contentcreated": contentcreated,
+                "subject": subject,
+                "all_img_urls": all_img_urls
+            }
+        except Exception as e:
+            print(f"[Parse error] {wayback_url} (raw={raw_url}) → {e}")
+            return None
 
-    for idx, target_url in enumerate(urls, 1):
-        logging.info(f"[{idx}/{len(urls)}] {target_url}")
-        latest = scraper.get_latest_snapshot(target_url)
-        if latest:
-            logging.info(f"  → 最新快照: {latest['wayback_url']}")
-            content = scraper.scrape_webpage_content(latest['wayback_url'])
-            if content:
-                content['target_url'] = target_url
-                content['timestamp'] = latest['timestamp']
-                content['formatted_date'] = scraper.format_timestamp(latest['timestamp'])
-                all_data.append(content)
-                logging.info("  [v] 成功")
-                print(f"[{idx}] v {target_url}")
-            else:
-                logging.error("  [x] 內容抓取失敗")
-                print(f"[{idx}] x 內容失敗")
-        else:
-            logging.error("  [x] 沒找到快照")
-            print(f"[{idx}] x 無快照")
+    def download_images(self, urls, item_id):
+        """
+        Download all images for an article.
+        Saved to images/{item_id}/img/
+        Filenames: {item_id}_cover_1.jpg (first), {item_id}_other_2.jpg (rest).
+        Returns a list of filenames aligned with input URLs.
+        """
+        saved_files = []
+        item_img_dir = os.path.join(self.img_root_dir, item_id, "img")
+        _ensure_dir(item_img_dir)
 
-    # --- 存檔 ---
-    if all_data:
-        with open("batch_latest_wayback_data.json", "w", encoding="utf-8") as f:
-            json.dump(all_data, f, ensure_ascii=False, indent=2)
-        logging.info("JSON 已輸出 batch_latest_wayback_data.json")
+        for i, url in enumerate(urls, 1):
+            try:
+                ext = os.path.splitext(url)[1].split("?")[0].lower()
+                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
+                    ext = '.jpg'
+                label = "cover" if i == 1 else "other"
+                fname = f"{item_id}_{label}_{i}{ext}"
+                fpath = os.path.join(item_img_dir, fname)
 
-        simplified = [{
-            'target_url': d.get('target_url'),
-            'timestamp': d.get('timestamp'),
-            'formatted_date': d.get('formatted_date'),
-            'title': d.get('title', ''),
-            'content': d.get('content', ''),
-            'h1_count': len(d.get('h1_tags', [])),
-            'wayback_url': d.get('url')
-        } for d in all_data]
-        pd.DataFrame(simplified).to_csv("batch_latest_wayback_summary.csv", index=False, encoding="utf-8-sig")
-        logging.info("CSV 已輸出 batch_latest_wayback_summary.csv")
-        print("[v] 已輸出 json / csv")
-    else:
-        print("全部網址失敗")
-
-
-if __name__ == "__main__":
-    start = time.time()
-    start_dt = datetime.now()
-    print("開始時間：", start_dt.strftime("%Y-%m-%d %H:%M:%S"))
-    logging.info("=====  程式開始  =====")
-
-    main()
-    
-    end = time.time()
-    end_dt = datetime.now()
-    print("結束時間：", end_dt.strftime("%Y-%m-%d %H:%M:%S"))
-    print(f"總耗時：{end - start:.2f} 秒")
-    logging.info(f"===== 程式結束，總耗時 {end - start:.2f} 秒 =====")
+                r = self.session.get(url, timeout=20)
+                if r.status_code == 200:
+                    with open(fpath, "wb") as f:
+                        f.write(r.content)
+                    saved_files.append(fname)
+                else:
+                    print(f"[Download failed {r.status_code}] {url}")
+                    saved_files.append("")
+            except Exception as e:
+                print(f"[Download error] {url} → {e}")
+                saved_files.append("")
+        return saved_files
+```
 
 ------------------
 
------ stdout -----
-開始時間： 2025-08-26 16:11:21
-------------------
 
-[0;31m---------------------------------------------------------------------------[0m
-[0;31mFileNotFoundError[0m                         Traceback (most recent call last)
-Cell [0;32mIn[1], line 142[0m
-[1;32m    139[0m [38;5;28mprint[39m([38;5;124m"[39m[38;5;124m開始時間：[39m[38;5;124m"[39m, start_dt[38;5;241m.[39mstrftime([38;5;124m"[39m[38;5;124m%[39m[38;5;124mY-[39m[38;5;124m%[39m[38;5;124mm-[39m[38;5;132;01m%d[39;00m[38;5;124m [39m[38;5;124m%[39m[38;5;124mH:[39m[38;5;124m%[39m[38;5;124mM:[39m[38;5;124m%[39m[38;5;124mS[39m[38;5;124m"[39m))
-[1;32m    140[0m logging[38;5;241m.[39minfo([38;5;124m"[39m[38;5;124m=====  程式開始  =====[39m[38;5;124m"[39m)
-[0;32m--> 142[0m [43mmain[49m[43m([49m[43m)[49m
-[1;32m    144[0m end [38;5;241m=[39m time[38;5;241m.[39mtime()
-[1;32m    145[0m end_dt [38;5;241m=[39m datetime[38;5;241m.[39mnow()
+[0;36m  File [0;32m<tokenize>:16[0;36m[0m
+[0;31m    source .venv/bin/activate # 啟動虛擬環境 macOS / Linux[0m
+[0m    ^[0m
+[0;31mIndentationError[0m[0;31m:[0m unindent does not match any outer indentation level
 
-Cell [0;32mIn[1], line 81[0m, in [0;36mmain[0;34m()[0m
-[1;32m     78[0m url_column_name [38;5;241m=[39m [38;5;124m"[39m[38;5;124muri[39m[38;5;124m"[39m
-[1;32m     79[0m N_LIMIT [38;5;241m=[39m [38;5;241m50[39m   [38;5;66;03m# None = 全部[39;00m
-[0;32m---> 81[0m df [38;5;241m=[39m [43mpd[49m[38;5;241;43m.[39;49m[43mread_csv[49m[43m([49m[43mcsv_path[49m[43m)[49m
-[1;32m     82[0m urls [38;5;241m=[39m df[url_column_name][38;5;241m.[39mdropna()[38;5;241m.[39mtolist()
-[1;32m     84[0m [38;5;28;01mif[39;00m N_LIMIT:
-
-File [0;32m~/Library/Python/3.10/lib/python/site-packages/pandas/io/parsers/readers.py:1026[0m, in [0;36mread_csv[0;34m(filepath_or_buffer, sep, delimiter, header, names, index_col, usecols, dtype, engine, converters, true_values, false_values, skipinitialspace, skiprows, skipfooter, nrows, na_values, keep_default_na, na_filter, verbose, skip_blank_lines, parse_dates, infer_datetime_format, keep_date_col, date_parser, date_format, dayfirst, cache_dates, iterator, chunksize, compression, thousands, decimal, lineterminator, quotechar, quoting, doublequote, escapechar, comment, encoding, encoding_errors, dialect, on_bad_lines, delim_whitespace, low_memory, memory_map, float_precision, storage_options, dtype_backend)[0m
-[1;32m   1013[0m kwds_defaults [38;5;241m=[39m _refine_defaults_read(
-[1;32m   1014[0m     dialect,
-[1;32m   1015[0m     delimiter,
-[0;32m   (...)[0m
-[1;32m   1022[0m     dtype_backend[38;5;241m=[39mdtype_backend,
-[1;32m   1023[0m )
-[1;32m   1024[0m kwds[38;5;241m.[39mupdate(kwds_defaults)
-[0;32m-> 1026[0m [38;5;28;01mreturn[39;00m [43m_read[49m[43m([49m[43mfilepath_or_buffer[49m[43m,[49m[43m [49m[43mkwds[49m[43m)[49m
-
-File [0;32m~/Library/Python/3.10/lib/python/site-packages/pandas/io/parsers/readers.py:620[0m, in [0;36m_read[0;34m(filepath_or_buffer, kwds)[0m
-[1;32m    617[0m _validate_names(kwds[38;5;241m.[39mget([38;5;124m"[39m[38;5;124mnames[39m[38;5;124m"[39m, [38;5;28;01mNone[39;00m))
-[1;32m    619[0m [38;5;66;03m# Create the parser.[39;00m
-[0;32m--> 620[0m parser [38;5;241m=[39m [43mTextFileReader[49m[43m([49m[43mfilepath_or_buffer[49m[43m,[49m[43m [49m[38;5;241;43m*[39;49m[38;5;241;43m*[39;49m[43mkwds[49m[43m)[49m
-[1;32m    622[0m [38;5;28;01mif[39;00m chunksize [38;5;129;01mor[39;00m iterator:
-[1;32m    623[0m     [38;5;28;01mreturn[39;00m parser
-
-File [0;32m~/Library/Python/3.10/lib/python/site-packages/pandas/io/parsers/readers.py:1620[0m, in [0;36mTextFileReader.__init__[0;34m(self, f, engine, **kwds)[0m
-[1;32m   1617[0m     [38;5;28mself[39m[38;5;241m.[39moptions[[38;5;124m"[39m[38;5;124mhas_index_names[39m[38;5;124m"[39m] [38;5;241m=[39m kwds[[38;5;124m"[39m[38;5;124mhas_index_names[39m[38;5;124m"[39m]
-[1;32m   1619[0m [38;5;28mself[39m[38;5;241m.[39mhandles: IOHandles [38;5;241m|[39m [38;5;28;01mNone[39;00m [38;5;241m=[39m [38;5;28;01mNone[39;00m
-[0;32m-> 1620[0m [38;5;28mself[39m[38;5;241m.[39m_engine [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_make_engine[49m[43m([49m[43mf[49m[43m,[49m[43m [49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mengine[49m[43m)[49m
-
-File [0;32m~/Library/Python/3.10/lib/python/site-packages/pandas/io/parsers/readers.py:1880[0m, in [0;36mTextFileReader._make_engine[0;34m(self, f, engine)[0m
-[1;32m   1878[0m     [38;5;28;01mif[39;00m [38;5;124m"[39m[38;5;124mb[39m[38;5;124m"[39m [38;5;129;01mnot[39;00m [38;5;129;01min[39;00m mode:
-[1;32m   1879[0m         mode [38;5;241m+[39m[38;5;241m=[39m [38;5;124m"[39m[38;5;124mb[39m[38;5;124m"[39m
-[0;32m-> 1880[0m [38;5;28mself[39m[38;5;241m.[39mhandles [38;5;241m=[39m [43mget_handle[49m[43m([49m
-[1;32m   1881[0m [43m    [49m[43mf[49m[43m,[49m
-[1;32m   1882[0m [43m    [49m[43mmode[49m[43m,[49m
-[1;32m   1883[0m [43m    [49m[43mencoding[49m[38;5;241;43m=[39;49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43moptions[49m[38;5;241;43m.[39;49m[43mget[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mencoding[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;28;43;01mNone[39;49;00m[43m)[49m[43m,[49m
-[1;32m   1884[0m [43m    [49m[43mcompression[49m[38;5;241;43m=[39;49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43moptions[49m[38;5;241;43m.[39;49m[43mget[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mcompression[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;28;43;01mNone[39;49;00m[43m)[49m[43m,[49m
-[1;32m   1885[0m [43m    [49m[43mmemory_map[49m[38;5;241;43m=[39;49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43moptions[49m[38;5;241;43m.[39;49m[43mget[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mmemory_map[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;28;43;01mFalse[39;49;00m[43m)[49m[43m,[49m
-[1;32m   1886[0m [43m    [49m[43mis_text[49m[38;5;241;43m=[39;49m[43mis_text[49m[43m,[49m
-[1;32m   1887[0m [43m    [49m[43merrors[49m[38;5;241;43m=[39;49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43moptions[49m[38;5;241;43m.[39;49m[43mget[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mencoding_errors[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;124;43m"[39;49m[38;5;124;43mstrict[39;49m[38;5;124;43m"[39;49m[43m)[49m[43m,[49m
-[1;32m   1888[0m [43m    [49m[43mstorage_options[49m[38;5;241;43m=[39;49m[38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43moptions[49m[38;5;241;43m.[39;49m[43mget[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mstorage_options[39;49m[38;5;124;43m"[39;49m[43m,[49m[43m [49m[38;5;28;43;01mNone[39;49;00m[43m)[49m[43m,[49m
-[1;32m   1889[0m [43m[49m[43m)[49m
-[1;32m   1890[0m [38;5;28;01massert[39;00m [38;5;28mself[39m[38;5;241m.[39mhandles [38;5;129;01mis[39;00m [38;5;129;01mnot[39;00m [38;5;28;01mNone[39;00m
-[1;32m   1891[0m f [38;5;241m=[39m [38;5;28mself[39m[38;5;241m.[39mhandles[38;5;241m.[39mhandle
-
-File [0;32m~/Library/Python/3.10/lib/python/site-packages/pandas/io/common.py:873[0m, in [0;36mget_handle[0;34m(path_or_buf, mode, encoding, compression, memory_map, is_text, errors, storage_options)[0m
-[1;32m    868[0m [38;5;28;01melif[39;00m [38;5;28misinstance[39m(handle, [38;5;28mstr[39m):
-[1;32m    869[0m     [38;5;66;03m# Check whether the filename is to be opened in binary mode.[39;00m
-[1;32m    870[0m     [38;5;66;03m# Binary mode does not support 'encoding' and 'newline'.[39;00m
-[1;32m    871[0m     [38;5;28;01mif[39;00m ioargs[38;5;241m.[39mencoding [38;5;129;01mand[39;00m [38;5;124m"[39m[38;5;124mb[39m[38;5;124m"[39m [38;5;129;01mnot[39;00m [38;5;129;01min[39;00m ioargs[38;5;241m.[39mmode:
-[1;32m    872[0m         [38;5;66;03m# Encoding[39;00m
-[0;32m--> 873[0m         handle [38;5;241m=[39m [38;5;28;43mopen[39;49m[43m([49m
-[1;32m    874[0m [43m            [49m[43mhandle[49m[43m,[49m
-[1;32m    875[0m [43m            [49m[43mioargs[49m[38;5;241;43m.[39;49m[43mmode[49m[43m,[49m
-[1;32m    876[0m [43m            [49m[43mencoding[49m[38;5;241;43m=[39;49m[43mioargs[49m[38;5;241;43m.[39;49m[43mencoding[49m[43m,[49m
-[1;32m    877[0m [43m            [49m[43merrors[49m[38;5;241;43m=[39;49m[43merrors[49m[43m,[49m
-[1;32m    878[0m [43m            [49m[43mnewline[49m[38;5;241;43m=[39;49m[38;5;124;43m"[39;49m[38;5;124;43m"[39;49m[43m,[49m
-[1;32m    879[0m [43m        [49m[43m)[49m
-[1;32m    880[0m     [38;5;28;01melse[39;00m:
-[1;32m    881[0m         [38;5;66;03m# Binary mode[39;00m
-[1;32m    882[0m         handle [38;5;241m=[39m [38;5;28mopen[39m(handle, ioargs[38;5;241m.[39mmode)
-
-[0;31mFileNotFoundError[0m: [Errno 2] No such file or directory: 'only_in_b.csv'
 
