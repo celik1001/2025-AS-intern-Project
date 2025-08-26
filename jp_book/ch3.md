@@ -1,4 +1,4 @@
-# 使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存成
+# 使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔
 
 ## 簡介
 
@@ -12,21 +12,20 @@
 在開始之前，建議先開一個虛擬環境，避免衝突。
 ```
 
-     python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
+    python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
     source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
     .venv\Scripts\activate # Windows
 
+`````
 ```
 
-```
-
-````{note}
+```{note}
 這支程式會使用 `requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動。
 在開始之前，請先安裝：
-    ```
+    ````
         pip install requests BeautifulSoup
-    ```
-````
+    ````
+```
 
 ```python
 import os
@@ -248,3 +247,4 @@ class WaybackScraper:
                 saved_files.append("")
         return saved_files
 ```
+`````

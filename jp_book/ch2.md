@@ -16,7 +16,7 @@
     source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
     .venv\Scripts\activate # Windows
 
-```
+`````
 
 ```
 
@@ -24,9 +24,9 @@
 這支程式會使用 `requests` 這個套件與 Wayback Machine 做互動。
 在開始之前，請先安裝：
     ```
-        pip install requests
+    pip install requests
     ```
-````
+`````
 
 ```python
 import requests, csv, time, random
