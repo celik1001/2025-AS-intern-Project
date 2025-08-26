@@ -1,8 +1,4 @@
-# 歡迎！
-
-> 這是暑期實習生張維芹在 2025 年中央研究院資訊科學研究所 Depositar 研究資料寄存所 的專題作品。
-
-## 專題題目
+# 專題題目
 
 Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引
 Research and Implementation of Web Archive Indexing: Building an Apple Daily Catalogue with the CDX API

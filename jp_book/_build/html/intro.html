@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>歡迎！ &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
+    <title>專題題目 &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
   
   
   
@@ -32,7 +32,7 @@
     <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
     <link rel="stylesheet" type="text/css" href="_static/togglebutton.css?v=13237357" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
-    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css?v=be8a1c11" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css?v=4fa983c6" />
     <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
   
@@ -61,6 +61,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="前言" href="preface.html" />
+    <link rel="prev" title="歡迎！" href="index.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -123,8 +124,6 @@
       
       
       
-        
-      
       <div class="bd-sidebar-primary bd-sidebar">
         
 
@@ -143,7 +142,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -174,13 +173,14 @@
     <div class="bd-toc-item navbar-nav active">
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1 current active">
-                <a class="reference internal" href="#">
+            <li class="toctree-l1">
+                <a class="reference internal" href="index.html">
                     歡迎！
                 </a>
             </li>
         </ul>
-        <ul class="nav bd-sidenav">
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">專題題目</a></li>
 <li class="toctree-l1"><a class="reference internal" href="preface.html">前言</a></li>
 </ul>
 
@@ -367,7 +367,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>歡迎！</h1>
+    <h1>專題題目</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -377,8 +377,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">專題題目</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">摘要</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">摘要</a></li>
 </ul>
             </nav>
         </div>
@@ -391,28 +390,17 @@ document.write(`
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="id1">
-<h1>歡迎！<a class="headerlink" href="#id1" title="Link to this heading">#</a></h1>
-<blockquote>
-<div><p>這是暑期實習生張維芹在 2025 年中央研究院資訊科學研究所 Depositar 研究資料寄存所 的專題作品。</p>
-</div></blockquote>
-<section id="id2">
-<h2>專題題目<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<h1>專題題目<a class="headerlink" href="#id1" title="Link to this heading">#</a></h1>
 <p>Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引
 Research and Implementation of Web Archive Indexing: Building an Apple Daily Catalogue with the CDX API</p>
-</section>
-<section id="id3">
-<h2>摘要<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<section id="id2">
+<h2>摘要<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
 <p>本專題旨在探討如何運用 <strong>Internet Archive 所提供的 CDX API</strong>，為《蘋果新聞網》（Apple Daily Taiwan）建立一套文章存檔的編目流程。隨著《蘋果日報》於 2021 年停刊，其網站內容逐漸消失，僅能透過 Internet Archive 及 Archive Team 等社群力量加以保存。雖然使用者仍能透過 <strong>Wayback Machine</strong> 存取單頁快取，但對於研究者而言，新聞檢索與系統化分析並不容易。先前已有暑期實習生利用 Archive Team 保存的 WARC 檔嘗試建立索引，但經過兩輪整理後，仍有超過三十萬篇新聞未能收錄。</p>
 <p>本研究將以 <strong>CDX API</strong> 為主要工具，蒐集《蘋果新聞網》的快取清單，並依日期與版別（如生活、國際、娛樂等）加以分類，初步聚焦於 <strong>2022 年 1 月至 8 月的本土新聞版</strong>，建立一份可檢索的文章索引。在此基礎上，進一步比對 <strong>CDX API 快取內容</strong> 與 <strong>ArchiveBot WARC 檔</strong>，檢視兩者在存檔完整性上的差異，並探討造成落差的可能因素，例如跨日抓取、robots.txt 政策限制、種子範圍設定與使用者透過 Save Page Now 所提交的快取等。</p>
 <p>透過本專題，期望能提出一套可重複應用的新聞存檔編目流程，不僅改善《蘋果新聞網》存檔的檢索可用性，也為數位新聞保存與學術研究提供可行的技術參考。</p>
 <p>This project aims to explore the use of the <strong>CDX API provided by the Internet Archive</strong> to develop a systematic indexing workflow for <em>Apple Daily Taiwan</em>. After the newspaper ceased publication in 2021, its website content gradually disappeared, with preservation efforts largely relying on the Internet Archive and community initiatives such as Archive Team. Although users can still access snapshots via the <strong>Wayback Machine</strong>, systematic retrieval and analysis remain difficult for researchers. Previous attempts by summer interns to build an index from Archive Team’s WARC files revealed significant gaps, leaving more than 300,000 articles uncaptured across two rounds of processing.</p>
 <p>In this study, we employ the <strong>CDX API</strong> to collect snapshot lists of Apple Daily, classifying them by date and section (e.g., Life, International, Entertainment), with a specific focus on <strong>the Local News section between January and August 2022</strong>. We then compare the coverage between <strong>snapshots retrievable via the CDX API</strong> and those stored in <strong>ArchiveBot WARC files</strong>, in order to identify discrepancies in archival completeness and to investigate possible causes such as cross-day captures, robots.txt restrictions, seed scope limitations, and Save Page Now user submissions.</p>
 <p>By doing so, this project not only produces a searchable index for the Apple Daily archives but also develops a replicable workflow for indexing news archives more broadly, contributing to the practice of digital preservation and supporting scholarly research in the digital humanities.</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="preface.html">前言</a></li>
-</ul>
-</div>
 </section>
 </section>
 
@@ -446,6 +434,15 @@ Research and Implementation of Web Archive Indexing: Building an Apple Daily Cat
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="index.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">歡迎！</p>
+      </div>
+    </a>
     <a class="right-next"
        href="preface.html"
        title="next page">
@@ -471,8 +468,7 @@ Research and Implementation of Web Archive Indexing: Building an Apple Daily Cat
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">專題題目</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">摘要</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">摘要</a></li>
 </ul>
   </nav></div>
 
