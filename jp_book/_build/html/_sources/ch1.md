@@ -13,9 +13,10 @@
 <iframe width="800" height="600" src="https://lookerstudio.google.com/embed/reporting/892b2c90-c9a4-4488-a6f7-559739d5a64c/page/crMUF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 
 那麼，有哪些內容沒被收到呢？
-以==https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/==，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是：
+以https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是：
 
 ```{mermaid}
+
 flowchart TD
   ROOT[www.appledaily.com.tw] --> HOME[/首頁/]
 
@@ -53,7 +54,6 @@ flowchart TD
   propDate --> propArt[/property/YYYYMMDD/ARTICLE_ID/]
   gameDate --> gameArt[/game/YYYYMMDD/ARTICLE_ID/]
 
-```
 
 可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。
 
@@ -99,50 +99,51 @@ https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20
 https://www.iptc.org/std/ninjs/userguide/#_multimedia_example
 
 ```
+
 {
 "uri": "URL from warc",
 "standard": {
-		"name": "ninjs",
-		"version": "3.0",
-		"schema": "https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json"
-	},
+"name": "ninjs",
+"version": "3.0",
+"schema": "https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json"
+},
 "firstcreated": "2024-02-07",
 "versioncreated": "2024-02-07",
 "contentcreated": "2024-02-07",
 "type": "text",
 "language": "zh-Hant-TW"
 "headlines": [
-		{
-			"role": "main",
-			"value": "This is Headline"
-		}
-    	],
+{
+"role": "main",
+"value": "This is Headline"
+}
+],
 "subjects": [
-		{
-			"name": "Crime, law and justice"
-		}
-        ],
+{
+"name": "Crime, law and justice"
+}
+],
 "bodies": [
-		{
-			"role": "main",
-            "contentType": "text/plain",
-			"value": "body content "
-		}
-    	],
+{
+"role": "main",
+"contentType": "text/plain",
+"value": "body content "
+}
+],
 "associations": [
-        {
-              "name": "mainpic",
-              "uri":"URL from warc photo",
-              "type":"picture",
-              "headlines" : [
-                {
-                      "value": "picture's title"
-                }
-              ],
-              "renditions" : [
-                {
-                  "href" : "./ID/img/X.jpg (relative path)",
-                  "contentType": "image/jpg",
+{
+"name": "mainpic",
+"uri":"URL from warc photo",
+"type":"picture",
+"headlines" : [
+{
+"value": "picture's title"
+}
+],
+"renditions" : [
+{
+"href" : "./ID/img/X.jpg (relative path)",
+"contentType": "image/jpg",
 
                 }
               ]
@@ -186,10 +187,13 @@ https://www.iptc.org/std/ninjs/userguide/#_multimedia_example
 "by": "by whom",
 "located": "place name",
 "altids": [
-		    {
-			"role": "internal",
-			"value": "TNT3L7GJIB7M3WEDXNIS3MYPGI"
-		    }
-    	]
+{
+"role": "internal",
+"value": "TNT3L7GJIB7M3WEDXNIS3MYPGI"
 }
+]
+}
+
+```
+
 ```
