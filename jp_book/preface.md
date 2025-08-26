@@ -13,4 +13,4 @@
 [^2]: WARC 格式
 [^3]: ArchiveBot. Archive Team Wiki. https://wiki.archiveteam.org/index.php/ArchiveBot
 [^4]:
-[^5]: 參見當代的孤兒報刊：網頁保存、研究資料、以及未來展望，COSCUP，https://pretalx.coscup.org/coscup-2025/talk/EJDGTD/。
+[^5]: 參見：當代的孤兒報刊：網頁保存、研究資料、以及未來展望，COSCUP，https://pretalx.coscup.org/coscup-2025/talk/EJDGTD/。
