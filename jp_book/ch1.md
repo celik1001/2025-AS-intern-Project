@@ -13,48 +13,7 @@
 <iframe width="800" height="600" src="https://lookerstudio.google.com/embed/reporting/892b2c90-c9a4-4488-a6f7-559739d5a64c/page/crMUF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 
 那麼，有哪些內容沒被收到呢？
-以https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是：
-
-```{mermaid}
-
-flowchart TD
-  ROOT[www.appledaily.com.tw] --> HOME[/首頁/]
-
-  ROOT --> SECTIONS[分類（Sections）]
-  SECTIONS --> life[/life/]
-  SECTIONS --> local[/local/]
-  SECTIONS --> international[/international/]
-  SECTIONS --> entertainment[/entertainment/]
-  SECTIONS --> politics[/politics/]
-  SECTIONS --> finance[/finance/]
-  SECTIONS --> society[/society/]
-  SECTIONS --> property[/property/]
-  SECTIONS --> game[/game/]
-  %% 依實際需要可增減
-
-  %% 日期列表
-  life --> lifeDate[/life/YYYYMMDD/]
-  local --> localDate[/local/YYYYMMDD/]
-  international --> intlDate[/international/YYYYMMDD/]
-  entertainment --> entDate[/entertainment/YYYYMMDD/]
-  politics --> polDate[/politics/YYYYMMDD/]
-  finance --> finDate[/finance/YYYYMMDD/]
-  society --> socDate[/society/YYYYMMDD/]
-  property --> propDate[/property/YYYYMMDD/]
-  game --> gameDate[/game/YYYYMMDD/]
-
-  %% 文章頁
-  lifeDate --> lifeArt[/life/YYYYMMDD/ARTICLE_ID/]
-  localDate --> localArt[/local/YYYYMMDD/ARTICLE_ID/]
-  intlDate --> intlArt[/international/YYYYMMDD/ARTICLE_ID/]
-  entDate --> entArt[/entertainment/YYYYMMDD/ARTICLE_ID/]
-  polDate --> polArt[/politics/YYYYMMDD/ARTICLE_ID/]
-  finDate --> finArt[/finance/YYYYMMDD/ARTICLE_ID/]
-  socDate --> socArt[/society/YYYYMMDD/ARTICLE_ID/]
-  propDate --> propArt[/property/YYYYMMDD/ARTICLE_ID/]
-  gameDate --> gameArt[/game/YYYYMMDD/ARTICLE_ID/]
-
-
+以https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是 ROOT -> 新聞類別 -> 日期 -> 文章獨立 id
 可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。
 
 因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
@@ -99,7 +58,6 @@ https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20
 https://www.iptc.org/std/ninjs/userguide/#_multimedia_example
 
 ```
-
 {
 "uri": "URL from warc",
 "standard": {
@@ -193,6 +151,8 @@ https://www.iptc.org/std/ninjs/userguide/#_multimedia_example
 }
 ]
 }
+
+```
 
 ```
 

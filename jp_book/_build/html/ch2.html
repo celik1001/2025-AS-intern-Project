@@ -382,6 +382,369 @@ document.write(`
                   
   <section class="tex2jax_ignore mathjax_ignore" id="cdx-api">
 <h1>使用 CDX api 查找 時間範圍內的網址內容<a class="headerlink" href="#cdx-api" title="Link to this heading">#</a></h1>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+ <span class="s2">&quot;cells&quot;</span><span class="p">:</span> <span class="p">[</span>
+  <span class="p">{</span>
+   <span class="s2">&quot;cell_type&quot;</span><span class="p">:</span> <span class="s2">&quot;code&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;execution_count&quot;</span><span class="p">:</span> <span class="n">null</span><span class="p">,</span>
+   <span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="s2">&quot;6b2c30d2-73af-4b5e-b83f-ca05196a13dd&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{},</span>
+   <span class="s2">&quot;outputs&quot;</span><span class="p">:</span> <span class="p">[],</span>
+   <span class="s2">&quot;source&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="s2">&quot;import requests, csv, time, random</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;from concurrent.futures import ThreadPoolExecutor, as_completed</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;from threading import Lock</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;import logging</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;import os</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;from collections import defaultdict</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;# 設定日誌</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;logging.basicConfig(level=logging.INFO, format=&#39;</span><span class="si">%(asctime)s</span><span class="s2"> - </span><span class="si">%(message)s</span><span class="s2">&#39;)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;logger = logging.getLogger(__name__)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;API = </span><span class="se">\&quot;</span><span class="s2">https://web.archive.org/cdx/search/cdx</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;class MultiCategoryWaybackScraper:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def __init__(self, max_workers=2, max_retries=3, timeout=60):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.max_workers = max_workers</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.max_retries = max_retries</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.timeout = timeout</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.session = requests.Session()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.session.headers.update({</span><span class="se">\&quot;</span><span class="s2">Accept-Encoding</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">gzip</span><span class="se">\&quot;</span><span class="s2">})</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.lock = Lock()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        self.stats = defaultdict(lambda: {</span><span class="se">\&quot;</span><span class="s2">success</span><span class="se">\&quot;</span><span class="s2">: 0, </span><span class="se">\&quot;</span><span class="s2">failed</span><span class="se">\&quot;</span><span class="s2">: 0, </span><span class="se">\&quot;</span><span class="s2">total_items</span><span class="se">\&quot;</span><span class="s2">: 0})</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def fetch_with_retry(self, params, info=</span><span class="se">\&quot;\&quot;</span><span class="s2">):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">帶重試機制的請求</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for attempt in range(self.max_retries):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            try:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                response = self.session.get(API, params=params, timeout=self.timeout)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                response.raise_for_status()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                data = response.json()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if not data:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    logger.warning(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Empty response on attempt {attempt + 1}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    continue</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                header, *items = data</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                logger.info(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Success: {len(items)} items</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                return items</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            except requests.exceptions.RequestException as e:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                wait_time = random.uniform(2, 5) * (attempt + 1)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                logger.warning(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Attempt {attempt + 1} failed: </span><span class="si">{e}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if attempt &lt; self.max_retries - 1:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    logger.info(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Waiting </span><span class="si">{wait_time:.1f}</span><span class="s2">s before retry</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    time.sleep(wait_time)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    logger.error(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - All attempts failed</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            except Exception as e:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                logger.error(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Unexpected error: </span><span class="si">{e}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                break</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        return []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def fetch_single_day(self, date, category):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">抓取單一日期和分類的資料</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        params = {</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">url</span><span class="se">\&quot;</span><span class="s2">: f</span><span class="se">\&quot;</span><span class="s2">www.appledaily.com.tw/</span><span class="si">{category}</span><span class="s2">/</span><span class="si">{date}</span><span class="s2">/*</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">output</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">json</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">fl</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">timestamp,original</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">filter</span><span class="se">\&quot;</span><span class="s2">: [</span><span class="se">\&quot;</span><span class="s2">statuscode:200</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">mimetype:text/html</span><span class="se">\&quot;</span><span class="s2">],</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">collapse</span><span class="se">\&quot;</span><span class="s2">: </span><span class="se">\&quot;</span><span class="s2">original</span><span class="se">\&quot;</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\&quot;</span><span class="s2">limit</span><span class="se">\&quot;</span><span class="s2">: 5000,</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        }</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        info = f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] </span><span class="si">{date}</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        items = self.fetch_with_retry(params, info)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        with self.lock:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            if items:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                self.stats[category][</span><span class="se">\&quot;</span><span class="s2">success</span><span class="se">\&quot;</span><span class="s2">] += 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                self.stats[category][</span><span class="se">\&quot;</span><span class="s2">total_items</span><span class="se">\&quot;</span><span class="s2">] += len(items)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                self.stats[category][</span><span class="se">\&quot;</span><span class="s2">failed</span><span class="se">\&quot;</span><span class="s2">] += 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        results = []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for ts, orig in items:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            try:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                clean = orig.split(&#39;?&#39;, 1)[0]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                article_id = clean.rstrip(&#39;/&#39;).split(&#39;/&#39;)[-1]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if not article_id or article_id == category:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    continue</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                article_url = f</span><span class="se">\&quot;</span><span class="s2">https://www.appledaily.com.tw/</span><span class="si">{category}</span><span class="s2">/</span><span class="si">{date}</span><span class="s2">/</span><span class="si">{article_id}</span><span class="s2">/</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                results.append((date, article_id, article_url, category))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            except Exception as e:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                logger.warning(f</span><span class="se">\&quot;</span><span class="si">{info}</span><span class="s2"> - Error processing item </span><span class="si">{orig}</span><span class="s2">: </span><span class="si">{e}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        return results</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def fetch_category_data(self, months, category):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">抓取單一分類多個月份的資料</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;</span><span class="s2">Starting category [</span><span class="si">{category}</span><span class="s2">] for months: </span><span class="si">{months}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        category_start = time.time()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 生成所有日期</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        all_dates = []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for month in months:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for day in range(1, 32):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                all_dates.append(f</span><span class="se">\&quot;</span><span class="si">{month}{day:02d}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        all_rows = []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        failed_requests = []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 多線程抓取</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            future_to_info = {</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                executor.submit(self.fetch_single_day, date, category): (date, category)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                for date in all_dates</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            }</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            completed = 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            total = len(future_to_info)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for future in as_completed(future_to_info):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                date, cat = future_to_info[future]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                completed += 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                try:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    results = future.result()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    if results:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        all_rows.extend(results)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        failed_requests.append((date, cat))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    # 每完成50個請求顯示進度</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    if completed % 50 == 0:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        logger.info(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] Progress: </span><span class="si">{completed}</span><span class="s2">/</span><span class="si">{total}</span><span class="s2"> ({completed/total*100:.1f}%)</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                except Exception as e:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    logger.error(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] </span><span class="si">{date}</span><span class="s2"> - Future exception: </span><span class="si">{e}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    failed_requests.append((date, cat))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 重試失敗的請求（單線程，更謹慎）</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if failed_requests:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.info(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] Retrying {len(failed_requests)} failed requests</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            retry_count = 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for date, cat in failed_requests[:]:  # 複製列表避免修改問題</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                time.sleep(random.uniform(3, 6))  # 重試間隔更長</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                retry_results = self.fetch_single_day(date, cat)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if retry_results:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    all_rows.extend(retry_results)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    failed_requests.remove((date, cat))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    retry_count += 1</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                # 每重試10個顯示進度</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if retry_count % 10 == 0:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    logger.info(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] Retry progress: </span><span class="si">{retry_count}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        category_elapsed = time.time() - category_start</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] Completed in </span><span class="si">{category_elapsed:.2f}</span><span class="s2">s, </span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                   f</span><span class="se">\&quot;</span><span class="s2">got {len(all_rows)} articles, {len(failed_requests)} failed</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        return all_rows, failed_requests</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def save_category_to_csv(self, rows, category, months):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">保存單一分類的資料到CSV</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if not rows:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.warning(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] No data to save</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            return 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 去重</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        unique_articles = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for date, article_id, url, cat in rows:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            key = f</span><span class="se">\&quot;</span><span class="si">{cat}</span><span class="s2">_</span><span class="si">{article_id}</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            if key not in unique_articles:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                unique_articles[key] = (date, article_id, url, cat)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                existing_date = unique_articles[key][0]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if date &lt; existing_date:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    unique_articles[key] = (date, article_id, url, cat)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 排序並寫入</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        sorted_articles = sorted(unique_articles.values())</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        month_range = f</span><span class="se">\&quot;</span><span class="si">{months[0]}</span><span class="s2">-</span><span class="si">{months[-1]}</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        filename = f</span><span class="se">\&quot;</span><span class="s2">appledaily_</span><span class="si">{category}</span><span class="s2">_</span><span class="si">{month_range}</span><span class="s2">.csv</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        with open(filename, </span><span class="se">\&quot;</span><span class="s2">w</span><span class="se">\&quot;</span><span class="s2">, newline=</span><span class="se">\&quot;\&quot;</span><span class="s2">, encoding=</span><span class="se">\&quot;</span><span class="s2">utf-8</span><span class="se">\&quot;</span><span class="s2">) as f:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            writer = csv.writer(f)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            writer.writerow([</span><span class="se">\&quot;</span><span class="s2">date</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">article_id</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">url</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">category</span><span class="se">\&quot;</span><span class="s2">])</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for row in sorted_articles:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                writer.writerow(row)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] Saved {len(sorted_articles)} unique articles to </span><span class="si">{filename}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        return len(sorted_articles), filename</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    def save_all_categories_to_csv(self, all_data, months):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;\&quot;\&quot;</span><span class="s2">保存所有分類的資料到一個總CSV</span><span class="se">\&quot;\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if not all_data:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.warning(</span><span class="se">\&quot;</span><span class="s2">No data to save to combined file</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            return 0, </span><span class="se">\&quot;\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 合併所有資料並去重</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        unique_articles = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for rows in all_data.values():</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for date, article_id, url, category in rows:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                key = f</span><span class="se">\&quot;</span><span class="si">{category}</span><span class="s2">_</span><span class="si">{article_id}</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                if key not in unique_articles:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    unique_articles[key] = (date, article_id, url, category)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    existing_date = unique_articles[key][0]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                    if date &lt; existing_date:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                        unique_articles[key] = (date, article_id, url, category)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 排序並寫入</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        sorted_articles = sorted(unique_articles.values())</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        month_range = f</span><span class="se">\&quot;</span><span class="si">{months[0]}</span><span class="s2">-</span><span class="si">{months[-1]}</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        filename = f</span><span class="se">\&quot;</span><span class="s2">appledaily_ALL_CATEGORIES_</span><span class="si">{month_range}</span><span class="s2">.csv</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        with open(filename, </span><span class="se">\&quot;</span><span class="s2">w</span><span class="se">\&quot;</span><span class="s2">, newline=</span><span class="se">\&quot;\&quot;</span><span class="s2">, encoding=</span><span class="se">\&quot;</span><span class="s2">utf-8</span><span class="se">\&quot;</span><span class="s2">) as f:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            writer = csv.writer(f)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            writer.writerow([</span><span class="se">\&quot;</span><span class="s2">date</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">article_id</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">url</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">category</span><span class="se">\&quot;</span><span class="s2">])</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            for row in sorted_articles:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                writer.writerow(row)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;</span><span class="s2">Saved {len(sorted_articles)} unique articles (all categories) to </span><span class="si">{filename}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        return len(sorted_articles), filename</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;def main():</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # === 設定參數 ===</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    months = [</span><span class="se">\&quot;</span><span class="s2">202201</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">202202</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">202203</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">202204</span><span class="se">\&quot;</span><span class="s2">, </span><span class="se">\&quot;</span><span class="s2">202205</span><span class="se">\&quot;</span><span class="s2">]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    categories = [</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">local</span><span class="se">\&quot;</span><span class="s2">,        # 地方新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">realtime</span><span class="se">\&quot;</span><span class="s2">,     # 即時新聞  </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">entertainment</span><span class="se">\&quot;</span><span class="s2">, # 娛樂新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">sports</span><span class="se">\&quot;</span><span class="s2">,       # 體育新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">international</span><span class="se">\&quot;</span><span class="s2">, # 國際新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">finance</span><span class="se">\&quot;</span><span class="s2">,      # 財經新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">life</span><span class="se">\&quot;</span><span class="s2">,         # 生活新聞</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\&quot;</span><span class="s2">forum</span><span class="se">\&quot;</span><span class="s2">         # 論壇</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    ]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # 建立爬蟲實例</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    scraper = MultiCategoryWaybackScraper(</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        max_workers=2,      # 2個線程（保守設定）</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        max_retries=3,      # 重試3次</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        timeout=60          # 60秒超時</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    )</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # 開始抓取</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    overall_start = time.time()</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    all_category_data = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    category_files = []</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;</span><span class="s2">=</span><span class="se">\&quot;</span><span class="s2"> * 80)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">STARTING MULTI-CATEGORY SCRAPING</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">Months: </span><span class="si">{months}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">Categories: </span><span class="si">{categories}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;</span><span class="s2">=</span><span class="se">\&quot;</span><span class="s2"> * 80)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    for i, category in enumerate(categories, 1):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;\\</span><span class="s2">n{&#39;=&#39;*20} CATEGORY </span><span class="si">{i}</span><span class="s2">/{len(categories)}: {category.upper()} {&#39;=&#39;*20}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        category_rows, failed = scraper.fetch_category_data(months, category)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        all_category_data[category] = category_rows</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 保存單一分類</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if category_rows:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            count, filename = scraper.save_category_to_csv(category_rows, category, months)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            category_files.append((category, count, filename))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.warning(f</span><span class="se">\&quot;</span><span class="s2">[</span><span class="si">{category}</span><span class="s2">] No data found!</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            category_files.append((category, 0, </span><span class="se">\&quot;</span><span class="s2">No file</span><span class="se">\&quot;</span><span class="s2">))</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        # 分類間休息（除了最後一個）</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if i &lt; len(categories):</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            rest_time = random.uniform(30, 60)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.info(f</span><span class="se">\&quot;</span><span class="s2">Resting </span><span class="si">{rest_time:.1f}</span><span class="s2">s before next category...</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            time.sleep(rest_time)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # 保存總合檔案</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    total_count, combined_file = scraper.save_all_categories_to_csv(all_category_data, months)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # 最終統計報告</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    total_time = time.time() - overall_start</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2"> + </span><span class="se">\&quot;</span><span class="s2">=</span><span class="se">\&quot;</span><span class="s2"> * 80)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;</span><span class="s2">FINAL REPORT</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;</span><span class="s2">=</span><span class="se">\&quot;</span><span class="s2"> * 80)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">Total execution time: </span><span class="si">{total_time:.2f}</span><span class="s2"> seconds ({total_time/60:.1f} minutes)</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">Months processed: {&#39;, &#39;.join(months)}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">Categories processed: {len(categories)}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;\\</span><span class="s2">nPer-category results:</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    total_articles = 0</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    for category, count, filename in category_files:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        logger.info(f</span><span class="se">\&quot;</span><span class="s2">  </span><span class="si">{category:&gt;15}</span><span class="s2">: </span><span class="si">{count:&gt;6}</span><span class="s2"> articles → </span><span class="si">{filename}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        total_articles += count</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;\\</span><span class="s2">nCombined results:</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">  Total raw articles: </span><span class="si">{total_articles}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">  Unique articles: </span><span class="si">{total_count}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;</span><span class="s2">  Combined file: </span><span class="si">{combined_file}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;\\</span><span class="s2">nSuccess rates by category:</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    for category in categories:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        stats = scraper.stats[category]</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        if stats[</span><span class="se">\&quot;</span><span class="s2">success</span><span class="se">\&quot;</span><span class="s2">] + stats[</span><span class="se">\&quot;</span><span class="s2">failed</span><span class="se">\&quot;</span><span class="s2">] &gt; 0:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            success_rate = stats[</span><span class="se">\&quot;</span><span class="s2">success</span><span class="se">\&quot;</span><span class="s2">] / (stats[</span><span class="se">\&quot;</span><span class="s2">success</span><span class="se">\&quot;</span><span class="s2">] + stats[</span><span class="se">\&quot;</span><span class="s2">failed</span><span class="se">\&quot;</span><span class="s2">]) * 100</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.info(f</span><span class="se">\&quot;</span><span class="s2">  </span><span class="si">{category:&gt;15}</span><span class="s2">: </span><span class="si">{success_rate:&gt;5.1f}</span><span class="s2">% </span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                       f</span><span class="se">\&quot;</span><span class="s2">(</span><span class="si">{stats[&#39;success&#39;]}</span><span class="s2">/{stats[&#39;success&#39;] + stats[&#39;failed&#39;]} requests, </span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                       f</span><span class="se">\&quot;</span><span class="si">{stats[&#39;total_items&#39;]}</span><span class="s2"> items)</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        else:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            logger.info(f</span><span class="se">\&quot;</span><span class="s2">  </span><span class="si">{category:&gt;15}</span><span class="s2">: No requests made</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    # 創建摘要檔案</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    summary_file = f</span><span class="se">\&quot;</span><span class="s2">SUMMARY_appledaily_</span><span class="si">{months[0]}</span><span class="s2">-</span><span class="si">{months[-1]}</span><span class="s2">.txt</span><span class="se">\&quot;\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    with open(summary_file, </span><span class="se">\&quot;</span><span class="s2">w</span><span class="se">\&quot;</span><span class="s2">, encoding=</span><span class="se">\&quot;</span><span class="s2">utf-8</span><span class="se">\&quot;</span><span class="s2">) as f:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(f</span><span class="se">\&quot;</span><span class="s2">Apple Daily Archive Summary</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(f</span><span class="se">\&quot;</span><span class="s2">Period: </span><span class="si">{months[0]}</span><span class="s2"> - </span><span class="si">{months[-1]}</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(f</span><span class="se">\&quot;</span><span class="s2">Execution time: </span><span class="si">{total_time:.2f}</span><span class="s2"> seconds</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(f</span><span class="se">\&quot;</span><span class="s2">Total unique articles: </span><span class="si">{total_count}</span><span class="se">\\</span><span class="s2">n</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(</span><span class="se">\&quot;</span><span class="s2">Files created:</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        for category, count, filename in category_files:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;            if filename != </span><span class="se">\&quot;</span><span class="s2">No file</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;                f.write(f</span><span class="se">\&quot;</span><span class="s2">  </span><span class="si">{filename}</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;        f.write(f</span><span class="se">\&quot;</span><span class="s2">  </span><span class="si">{combined_file}</span><span class="se">\\</span><span class="s2">n</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(f</span><span class="se">\&quot;\\</span><span class="s2">nSummary saved to: </span><span class="si">{summary_file}</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    logger.info(</span><span class="se">\&quot;</span><span class="s2">SCRAPING COMPLETED!</span><span class="se">\&quot;</span><span class="s2">)</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;if __name__ == </span><span class="se">\&quot;</span><span class="s2">__main__</span><span class="se">\&quot;</span><span class="s2">:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;    main()&quot;</span>
+   <span class="p">]</span>
+  <span class="p">}</span>
+ <span class="p">],</span>
+ <span class="s2">&quot;metadata&quot;</span><span class="p">:</span> <span class="p">{</span>
+  <span class="s2">&quot;kernelspec&quot;</span><span class="p">:</span> <span class="p">{</span>
+   <span class="s2">&quot;display_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Python 3 (ipykernel)&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;python3&quot;</span>
+  <span class="p">},</span>
+  <span class="s2">&quot;language_info&quot;</span><span class="p">:</span> <span class="p">{</span>
+   <span class="s2">&quot;codemirror_mode&quot;</span><span class="p">:</span> <span class="p">{</span>
+    <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ipython&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="mi">3</span>
+   <span class="p">},</span>
+   <span class="s2">&quot;file_extension&quot;</span><span class="p">:</span> <span class="s2">&quot;.py&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;mimetype&quot;</span><span class="p">:</span> <span class="s2">&quot;text/x-python&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;nbconvert_exporter&quot;</span><span class="p">:</span> <span class="s2">&quot;python&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;pygments_lexer&quot;</span><span class="p">:</span> <span class="s2">&quot;ipython3&quot;</span><span class="p">,</span>
+   <span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;3.10.2&quot;</span>
+  <span class="p">}</span>
+ <span class="p">},</span>
+ <span class="s2">&quot;nbformat&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+ <span class="s2">&quot;nbformat_minor&quot;</span><span class="p">:</span> <span class="mi">5</span>
+<span class="p">}</span>
+</pre></div>
+</div>
 </section>
 
     <script type="text/x-thebe-config">
