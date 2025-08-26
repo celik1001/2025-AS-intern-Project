@@ -184,6 +184,7 @@
 <li class="toctree-l1"><a class="reference internal" href="ch0.html">前言</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">研究問題、方法及流程</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch2.html">使用 CDX api 查找 時間範圍內的網址內容</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ch3.html">使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔</a></li>
 </ul>
 
     </div>
@@ -382,8 +383,8 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">研究問題概述</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">流程概要</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">API</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">套件</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">API</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">套件</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
 </li>
@@ -419,9 +420,9 @@ document.write(`
 <p>是以，透過這樣的實驗，希望：</p>
 <ol class="arabic simple">
 <li><p>建立《蘋果新聞網》文章快取的 編目流程</p></li>
-<li><p>以 2022 年 1 月至 8 月本土版（local）為案例，建立一份具體的文章索引</p></li>
+<li><p>以 2022 年 1 月本土版（local）為案例，建立一份文章索引。</p></li>
 <li><p>接著比對 CDX API 快取清單 與 ArchiveBot WARC，檢視存檔完整性差異。</p></li>
-<li><p>探討差異成因（跨日抓取、robots.txt 限制、種子設定、Save Page Now 介入）。</p></li>
+<li><p>探討差異成因。</p></li>
 </ol>
 </section>
 <section id="id3">
@@ -430,23 +431,23 @@ document.write(`
 <li><p>CDX API <a class="reference external" href="http://xn--www-gx3e849d.appledaily.com.tw/*%EF%BC%8C%E6%8C%87%E5%AE%9A%E7%89%88%E9%9D%A2%E3%80%81%E6%97%A5%E6%9C%9F%E5%8D%80%E9%96%93%E3%80%82">抽取www.appledaily.com.tw/*，指定版面、日期區間。</a></p></li>
 <li><p>抽取欄位：timestamp、original、statuscode、mimetype、digest、length。</p></li>
 <li><p>清理 URL（去除參數、斜線）。</p></li>
-<li><p>輸出為 JSON，依 ninjs3.0 標準釋出。</p></li>
+<li><p>輸出為 JSON，依 ninjs3.0 標準釋出。<a class="footnote-reference brackets" href="#id7" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p></li>
 <li><p>CDX-only（僅在 CDX 出現，多數為 Save Page Now / IA 抓取）/WARC-only（僅在 WARC 出現，可能因政策隱藏，CDX 不顯示）統計差異數量與比例。</p></li>
 </ul>
 </section>
 <section id="api">
 <h2>API 及套件說明<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
 <p>以下是相關說明。</p>
-<section id="id4">
-<h3>API<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<section id="id5">
+<h3>API<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
 <p><a class="reference external" href="https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server">Wayback CDX api</a>
 用來取得 Wayback Machine 上最新的網頁快取連結。</p>
 </section>
-<section id="id5">
-<h3>套件<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
-<p>網頁爬蟲與擷取 requests → BeautifulSoup 解析 HTML → pandas 整理 → CSV/JSON 存檔
-大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試
-網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位
+<section id="id6">
+<h3>套件<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<p>網頁爬蟲與擷取 requests → BeautifulSoup 解析 HTML → pandas 整理 → CSV/JSON 存檔 <br>
+大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試 <br>
+網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位 <br>
 分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包</p>
 </section>
 <section id="ninjs3-0">
@@ -554,6 +555,13 @@ document.write(`
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
 </pre></div>
 </div>
+<hr class="footnotes docutils" />
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id7" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">1</a><span class="fn-bracket">]</span></span>
+<p>ninjs 3.0</p>
+</aside>
+</aside>
 </section>
 </section>
 </section>
@@ -625,8 +633,8 @@ document.write(`
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">研究問題概述</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">流程概要</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">API</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">套件</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">API</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">套件</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
 </ul>
 </li>

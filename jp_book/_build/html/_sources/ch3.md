@@ -8,21 +8,18 @@
 為了加快速度，使用了多執行緒來加快程式運作。
 
 ```{tip}
-以下皆是在Python3中執行。
+以下程式碼皆是在Python3環境中執行。
 在開始之前，建議先開一個虛擬環境，避免衝突。
+
 ```
 
-    python3 -m venv .venv  # 建立虛擬環境 (資料夾名稱可自訂，一般用 .venv 或 venv)
-    source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
-    .venv\Scripts\activate # Windows
-
-`````
+```
+python3 -m venv .venv # 建立虛擬環境 (資料夾名稱可以自訂，一般用 .venv 或 venv)
+source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
+.venv\Scripts\activate # Windows
 ```
 
-````{note}
-這支程式會使用 `requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動。
-在開始之前，請先安裝：
-    ```
-        pip install requests BeautifulSoup
-    ```
-`````
+```{note}
+請先透過命令列或anacoda 安裝jupyter notebook。
+另外，這支程式會使用`requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動，在開始之前，也請先安裝。
+```
