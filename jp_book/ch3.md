@@ -19,16 +19,17 @@
 `````
 ```
 
-```{note}
+````{note}
 這支程式會使用 `requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動。
 在開始之前，請先安裝：
     ````
         pip install requests BeautifulSoup
     ````
-```
+````
 
 ```python
 import os
+import re
 import time
 import json
 import zipfile
@@ -41,32 +42,24 @@ from urllib.parse import urlparse
 ```
 
 ```python
-# settings
-INPUT_CSV = "example.csv"  # Input file with article URLs
+# basic setting
+INPUT_CSV = "example.csv"
 URL_FIELD = "uri"
 ID_FIELD = "id"
 THREADS = 5
-N_LIMIT = 10                    # None = all rows
+N_LIMIT = 5                  # None == all
 OUTPUT_PREFIX = "output_"
 SKIP_FILE_NAME = "skipped_urls.txt"
 ```
 
 ```python
-# Utility functions
+# tools
 def _only_date(s: str) -> str:
-    """
-    Normalize different datetime formats into YYYY-MM-DD.
-    Supported inputs include:
-    - '20240207123456' (CDX timestamp)
-    - '2024-02-07T12:34:56+08:00'
-    - '2024-02-07 12:34:56'
-    - '2024-02-07'
-    Returns empty string if parsing fails.
-    """
+    """Normalize time string to YYYY-MM-DD. Return '' if parsing fails."""
     if not s:
         return ""
     s = s.strip()
-    if s.isdigit() and len(s) == 14:  # CDX format
+    if s.isdigit() and len(s) == 14:  # CDX: YYYYmmddHHMMSS
         try:
             return datetime.strptime(s, "%Y%m%d%H%M%S").strftime("%Y-%m-%d")
         except Exception:
@@ -84,12 +77,8 @@ def _only_date(s: str) -> str:
         return s[:10]
     return ""
 
-
 def _first_path_segment(raw_url: str) -> str:
-    """
-    Return the first path segment of a URL.
-    Example: /local/20200729/... -> 'local'
-    """
+    """Return first URL path segment (e.g., /local/20200729/... -> local)."""
     try:
         p = urlparse(raw_url)
         parts = [seg for seg in p.path.split("/") if seg]
@@ -97,9 +86,68 @@ def _first_path_segment(raw_url: str) -> str:
     except Exception:
         return ""
 
+def _norm_img_url(src: str) -> str:
+    """Normalize to absolute Wayback URL."""
+    if not src:
+        return ""
+    src = src.strip()
+    if src.startswith("//"):
+        return "https:" + src
+    if src.startswith("/"):
+        return "https://web.archive.org" + src
+    if not src.startswith("http"):
+        return "https://web.archive.org" + ("/" + src if not src.startswith("/") else src)
+    return src
 
-def _ensure_dir(path: str):
-    os.makedirs(path, exist_ok=True)
+def _content_type_from_ext(filename: str) -> str:
+    """Map file extension to MIME type."""
+    ext = os.path.splitext(filename)[1].lower().lstrip(".")
+    if ext in ("jpg", "jpeg"):
+        return "image/jpeg"
+    if ext in ("png", "gif", "webp", "bmp", "svg"):
+        return f"image/{ext}"
+    return "image/jpeg"
+
+def _normalize_text(s: str) -> str:
+    """Light normalization for pattern matching (unify slashes, remove extra spaces)."""
+    if not s:
+        return ""
+    s = s.replace("／", "/").replace("　", " ").strip()
+    s = re.sub(r"\s+", " ", s)
+    return s
+
+def _extract_by_loc_text(text: str) -> tuple[str, str]:
+    """
+    Extract 'by' (reporter) and 'located' (place/desk) from text such as:
+      - 記者周庭慶／台中報導
+      - 地方中心周庭慶／台中報導
+      - 周庭慶／台中報導
+      - （…）變體皆可；允許 / 與 ／；報導/報道 都接受
+    Returns (by, located) or ("","") if not found.
+    """
+    t = _normalize_text(text)
+
+    # Common patterns
+    patterns = [
+        # Optional prefix + NAME / PLACE 報導|報道
+        r'(?:記者|地方中心|採訪中心|特派|特約)?\s*([\u4e00-\u9fa5A-Za-z·．\.\s]{2,20})\s*/\s*([\u4e00-\u9fa5A-Za-z·\.\s]{1,10})\s*報[導道]',
+        # NAME / PLACE 報導|報道
+        r'([\u4e00-\u9fa5A-Za-z·．\.\s]{2,20})\s*/\s*([\u4e00-\u9fa5A-Za-z·\.\s]{1,10})\s*報[導道]',
+    ]
+    for pat in patterns:
+        m = re.search(pat, t)
+        if m:
+            by = m.group(1).strip(" ，,。.!?（）()")
+            located = m.group(2).strip(" ，,。.!?（）()")
+            return by, located
+
+    # Fallback: only "(PLACE報導)" without a clear name
+    m = re.search(r'([\u4e00-\u9fa5A-Za-z·\.\s]{1,10})\s*報[導道]', t)
+    if m:
+        return "", m.group(1).strip(" ，,。.!?（）()")
+
+    return "", ""
+
 ```
 
 ```python
@@ -109,13 +157,10 @@ class WaybackScraper:
         self.session = requests.Session()
         self.session.headers.update({'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
         self.img_root_dir = img_root_dir
-        _ensure_dir(self.img_root_dir)
+        os.makedirs(self.img_root_dir, exist_ok=True)
 
     def get_latest_snapshot(self, url):
-        """
-        Query the CDX API for the latest snapshot of a given URL.
-        Returns timestamp, original URL, and constructed Wayback URL.
-        """
+        """Query CDX for the latest successful snapshot."""
         api = "https://web.archive.org/cdx/search/cdx"
         params = {
             'url': url,
@@ -131,19 +176,16 @@ class WaybackScraper:
             if len(data) > 1:
                 row = data[1]
                 return {
-                    'timestamp': row[1],
+                    'timestamp': row[1],  # YYYYmmddHHMMSS
                     'original_url': row[2],
                     'wayback_url': f"https://web.archive.org/web/{row[1]}/{row[2]}"
                 }
         except Exception as e:
-            print(f"[CDX error] {url} → {e}, params={params}")
+            print(f"[CDX error] {url} → {e}")
         return None
 
     def _extract_published_date(self, soup, wayback_ts: str) -> str:
-        """
-        Try to extract a published date from <meta property='article:published_time'>
-        or <time datetime>. Fall back to Wayback timestamp if none are found.
-        """
+        """Use meta[article:published_time] or <time>; fallback to Wayback timestamp."""
         meta = soup.find("meta", attrs={"property": "article:published_time"})
         if meta and meta.get("content"):
             d = _only_date(meta.get("content"))
@@ -156,95 +198,261 @@ class WaybackScraper:
                 return d
         return _only_date(wayback_ts)
 
-    def scrape_article(self, wayback_url: str, raw_url: str, wayback_ts: str):
+    def scrape_article_payload(self, wayback_url, raw_url, item_id, wayback_ts):
         """
-        Parse a Wayback snapshot page to extract:
-        - title
-        - body text (concatenated <p> tags)
-        - publication date
-        - category (from URL path)
-        - image URLs (first = cover, rest = others)
+        Parse snapshot:
+          - title
+          - body text (joined <p>)
+          - published date
+          - subject (first path segment)
+          - images: FIRST <img> = cover, remaining = other
+          - image alts map
+          - by / located extraction (author/byline zones → fallback to title+first body chunk)
         """
         try:
             resp = self.session.get(wayback_url, timeout=20)
             resp.raise_for_status()
-            soup = BeautifulSoup(resp.content, 'html.parser')
+            # prefer lxml; fallback to html.parser
+            parser = "lxml"
+            try:
+                import lxml  # noqa
+            except Exception:
+                parser = "html.parser"
+            soup = BeautifulSoup(resp.content, parser)
 
-            # Title
-            title_tag = soup.find("h1") or soup.find("title")
-            title = title_tag.get_text(strip=True) if title_tag else ""
+            # title
+            h1 = soup.find("h1") or soup.find("title")
+            title = h1.get_text(strip=True) if h1 else ""
 
-            # Body text
-            bodies = "\n".join(
-                p.get_text().strip()
-                for p in soup.find_all("p")
-                if p.get_text().strip()
-            )
+            # bodies
+            paragraphs = [p.get_text().strip() for p in soup.find_all("p") if p.get_text().strip()]
+            body_text = "\n".join(paragraphs)
 
-            # Dates
-            firstcreated = self._extract_published_date(soup, wayback_ts)
-            contentcreated = firstcreated
-            versioncreated = _only_date(wayback_ts)
+            # date
+            published_date = self._extract_published_date(soup, wayback_ts)
 
-            # Collect images
-            all_img_urls = []
+            # collect all <img> in order; first is cover, rest are other
+            all_imgs, seen = [], set()
             for img in soup.find_all("img"):
-                src = img.get("src")
+                src = _norm_img_url(img.get("src"))
+                if not src or src in seen:
+                    continue
+                if "." not in os.path.basename(src):  # crude filter: must look like a file
+                    continue
+                all_imgs.append(src)
+                seen.add(src)
+            cover_urls = all_imgs[:1]
+            other_urls = all_imgs[1:]
+
+            # alts
+            img_alts = {}
+            for img in soup.find_all("img"):
+                src = _norm_img_url(img.get("src"))
                 if not src:
                     continue
-                if src.startswith("//"):
-                    src = "https:" + src
-                elif not src.startswith("http"):
-                    src = f"https://web.archive.org{src}"
-                if src not in all_img_urls:
-                    all_img_urls.append(src)
+                img_alts[src] = (img.get("alt") or "").strip()
 
-            subject = _first_path_segment(raw_url)
+            # by/located: search in byline zones first
+            meta_zone_texts = []
+            for sel in [
+                {"name": "span", "class_": re.compile("author|byline")},
+                {"name": "div",  "class_": re.compile("author|byline")},
+                {"name": "p",    "class_": re.compile("author|byline")},
+            ]:
+                for el in soup.find_all(sel["name"], class_=sel["class_"]):
+                    meta_zone_texts.append(el.get_text(" ", strip=True))
+            by, located = _extract_by_loc_text("  ".join(meta_zone_texts))
+
+            # fallback: try title + first body chunk if still empty
+            if not by and not located:
+                head_and_lead = (title + " " + " ".join(paragraphs[:3]))[:800]
+                by, located = _extract_by_loc_text(head_and_lead)
+
+            subject_name = _first_path_segment(raw_url)
 
             return {
                 "title": title,
-                "bodies": bodies,
-                "firstcreated": firstcreated,
-                "versioncreated": versioncreated,
-                "contentcreated": contentcreated,
-                "subject": subject,
-                "all_img_urls": all_img_urls
+                "body_text": body_text,
+                "published_date": published_date,
+                "cover_urls": cover_urls,
+                "other_urls": other_urls,
+                "img_alts": img_alts,
+                "subject_name": subject_name,
+                "by": by,
+                "located": located,
             }
         except Exception as e:
-            print(f"[Parse error] {wayback_url} (raw={raw_url}) → {e}")
+            print(f"[failed capture] {wayback_url} → {e}")
             return None
 
-    def download_images(self, urls, item_id):
+    def download_images(self, urls, item_id, label, start_at=1):
         """
-        Download all images for an article.
-        Saved to images/{item_id}/img/
-        Filenames: {item_id}_cover_1.jpg (first), {item_id}_other_2.jpg (rest).
-        Returns a list of filenames aligned with input URLs.
+        Download images to images/{item_id}/img/
+        Filename format: {item_id}_{label}_{N}.{ext}
+          - cover uses start_at=1  → {item_id}_cover_1.png
+          - other can start at 2   → {item_id}_other_2.png (if a cover exists)
+        Returns: list of (url, filename)
         """
-        saved_files = []
+        saved = []
         item_img_dir = os.path.join(self.img_root_dir, item_id, "img")
-        _ensure_dir(item_img_dir)
+        os.makedirs(item_img_dir, exist_ok=True)
 
         for i, url in enumerate(urls, 1):
             try:
                 ext = os.path.splitext(url)[1].split("?")[0].lower()
-                if ext not in ['.jpg', '.jpeg', '.png', '.gif', '.webp']:
-                    ext = '.jpg'
-                label = "cover" if i == 1 else "other"
-                fname = f"{item_id}_{label}_{i}{ext}"
+                if ext not in [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"]:
+                    ext = ".jpg"
+                seq = start_at + i - 1
+                fname = f"{item_id}_{label}_{seq}{ext}"
                 fpath = os.path.join(item_img_dir, fname)
 
                 r = self.session.get(url, timeout=20)
                 if r.status_code == 200:
                     with open(fpath, "wb") as f:
                         f.write(r.content)
-                    saved_files.append(fname)
+                    saved.append((url, fname))
                 else:
-                    print(f"[Download failed {r.status_code}] {url}")
-                    saved_files.append("")
+                    print(f"[Download {r.status_code}] {url}")
             except Exception as e:
                 print(f"[Download error] {url} → {e}")
-                saved_files.append("")
-        return saved_files
+        return saved
+```
+
+```python
+# per-row
+def process_row(row, scraper: WaybackScraper, skip_file_path: str):
+    raw_url = row[URL_FIELD]
+    item_id = str(row[ID_FIELD])
+
+    snap = scraper.get_latest_snapshot(raw_url)
+    if not snap:
+        with open(skip_file_path, "a", encoding="utf-8") as f:
+            f.write(raw_url + "\n")
+        return None
+
+    parsed = scraper.scrape_article_payload(
+        wayback_url=snap['wayback_url'],
+        raw_url=raw_url,
+        item_id=item_id,
+        wayback_ts=snap['timestamp']
+    )
+    if not parsed:
+        with open(skip_file_path, "a", encoding="utf-8") as f:
+            f.write(raw_url + "\n")
+        return None
+
+    # download images with desired numbering
+    cover_saved = scraper.download_images(parsed["cover_urls"], item_id, "cover", start_at=1)
+    other_start = 2 if cover_saved else 1
+    other_saved = scraper.download_images(parsed["other_urls"], item_id, "other", start_at=other_start)
+
+    # build associations: first = "cover"; others = "other_1", "other_2", ...
+    associations = []
+
+    def _mk_assoc(name_label, url_fname_tuple):
+        url, fname = url_fname_tuple
+        href = f"./images/{item_id}/img/{fname}"
+        ctype = _content_type_from_ext(fname)
+        return {
+            "name": name_label,
+            "uri": url,
+            "type": "picture",
+            "headlines": [{"value": parsed["img_alts"].get(url, "")}],
+            "renditions": [{"href": href, "contentType": ctype}]
+        }
+
+    if cover_saved:
+        associations.append(_mk_assoc("cover", cover_saved[0]))
+    for i, tup in enumerate(other_saved, 1):
+        associations.append(_mk_assoc(f"other_{i}", tup))
+
+    # dates
+    firstcreated = parsed["published_date"] or _only_date(snap['timestamp'])
+    versioncreated = _only_date(snap['timestamp'])  # Wayback snapshot date
+    contentcreated = firstcreated
+    subjects = [{"name": parsed["subject_name"]}] if parsed["subject_name"] else []
+
+    ninjs_obj = {
+        "uri": raw_url,
+        "standard": {
+            "name": "ninjs",
+            "version": "3.0",
+            "schema": "https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json"
+        },
+        "firstcreated": firstcreated,
+        "versioncreated": versioncreated,
+        "contentcreated": contentcreated,
+        "type": "text",
+        "language": "zh-Hant-TW",
+        "headlines": [{"role": "main", "value": parsed["title"]}],
+        "subjects": subjects,
+        "bodies": [{"role": "main", "contentType": "text/plain", "value": parsed["body_text"]}],
+        "associations": associations,
+        "by": parsed.get("by", ""),          # <-- filled from extractor
+        "located": parsed.get("located", ""),# <-- filled from extractor
+        "altids": [{"role": "internal", "value": item_id}]
+    }
+    return ninjs_obj
+```
+
+```python
+#  main
+if __name__ == "__main__":
+    t0 = time.time()
+    print("activetime:", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_dir = f"{OUTPUT_PREFIX}{ts}"
+    os.makedirs(out_dir, exist_ok=True)
+
+    img_root_dir = os.path.join(out_dir, "images")
+    skip_file_path = os.path.join(out_dir, SKIP_FILE_NAME)
+    os.makedirs(img_root_dir, exist_ok=True)
+    if os.path.exists(skip_file_path):
+        os.remove(skip_file_path)
+
+    df = pd.read_csv(INPUT_CSV)
+    if N_LIMIT:
+        df = df.head(N_LIMIT)
+
+    print("output_index:", out_dir)
+    scraper = WaybackScraper(img_root_dir=img_root_dir)
+
+    ninjs_list = []
+    with ThreadPoolExecutor(max_workers=THREADS) as executor:
+        tasks = {executor.submit(process_row, row, scraper, skip_file_path): row for _, row in df.iterrows()}
+        for i, f in enumerate(as_completed(tasks), 1):
+            obj = f.result()
+            if obj:
+                ninjs_list.append(obj)
+                print(f"[{i}] ✔ {obj['uri']}")
+            else:
+                print(f"[{i}] ✘ skipped")
+
+    # ninjs.json（array）
+    if ninjs_list:
+        with open(os.path.join(out_dir, "ninjs.json"), "w", encoding="utf-8") as f:
+            json.dump(ninjs_list, f, ensure_ascii=False, indent=2)
+        print("already output ninjs.json")
+    else:
+        print("failed")
+
+    # zip all files
+    zip_name = out_dir + ".zip"
+    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as z:
+        for root, _, files in os.walk(out_dir):
+            for file in files:
+                fp = os.path.join(root, file)
+                z.write(fp, os.path.relpath(fp, start=os.path.dirname(out_dir)))
+    print(f"zipped: {zip_name}")
+
+    # skip count
+    skip_count = 0
+    if os.path.exists(skip_file_path):
+        with open(skip_file_path, encoding="utf-8") as f:
+            skip_count = len([l for l in f if l.strip()])
+    print(f"total {skip_count} URL skipped")
+    print("cost: %.2f s" % (time.time() - t0))
+
 ```
 `````
