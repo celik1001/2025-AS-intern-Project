@@ -11,6 +11,14 @@ logo: logo.png
 execute:
   execute_notebooks: force
 
+parse:
+  myst_enable_extensions:
+    - colon_fence
+    - deflist
+    - dollarmath
+    - linkify
+    - html_image
+
 # Define the name of the latex output file for PDF builds
 latex:
   latex_documents:
@@ -31,3 +39,15 @@ repository:
 html:
   use_issues_button: true
   use_repository_button: true
+
+sphinx:
+  extra_extensions:
+    - sphinx_copybutton
+    - sphinx_togglebutton
+    - sphinx_design
+
+launch_buttons:
+  thebe: true
+thebe_config:
+  selector: "div.cell"
+  kernelName: "python3"
