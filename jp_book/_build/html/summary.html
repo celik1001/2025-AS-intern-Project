@@ -184,6 +184,7 @@
 <li class="toctree-l1"><a class="reference internal" href="ch0.html">前言</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch1.html">研究問題、方法及流程</a></li>
 <li class="toctree-l1"><a class="reference internal" href="ch2.html">使用 CDX api 查找 時間範圍內的網址內容</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ch3.html">使用 BeautifulSoup、requests 來擷取 Wayback Machine 上的網頁內容並存檔</a></li>
 </ul>
 
     </div>
@@ -398,7 +399,7 @@ Research and Implementation of Web Archive Indexing: Building an Apple Daily Cat
 <section id="id2">
 <h2>摘要<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
 <p>本專題旨在探討如何運用 <strong>Internet Archive 所提供的 CDX API</strong>，為《蘋果新聞網》（Apple Daily Taiwan）建立一套文章存檔的編目流程。隨著《蘋果日報》於 2021 年停刊，其網站內容逐漸消失，僅能透過 Internet Archive 及 Archive Team 等社群力量加以保存。雖然使用者仍能透過 <strong>Wayback Machine</strong> 存取單頁快取，但對於研究者而言，新聞檢索與系統化分析並不容易。先前已有暑期實習生利用 Archive Team 保存的 WARC 檔嘗試建立索引，但經過兩輪整理後，仍有超過三十萬篇新聞未能收錄。</p>
-<p>本研究將以 <strong>CDX API</strong> 為主要工具，蒐集《蘋果新聞網》的快取清單，並依日期與版別（如生活、國際、娛樂等）加以分類，初步聚焦於 <strong>2022 年 1 月至 8 月的本土新聞版</strong>，建立一份可檢索的文章索引。在此基礎上，進一步比對 <strong>CDX API 快取內容</strong> 與 <strong>ArchiveBot WARC 檔</strong>，檢視兩者在存檔完整性上的差異，並探討造成落差的可能因素，例如跨日抓取、robots.txt 政策限制、種子範圍設定與使用者透過 Save Page Now 所提交的快取等。</p>
+<p>本研究將以 <strong>CDX API</strong> 為主要工具，蒐集《蘋果新聞網》的快取清單，並依日期與版別（如生活、國際、娛樂等）加以分類，初步聚焦於 <strong>2022 年 1 月至 8 月的本土新聞版</strong>，建立一份可檢索的文章索引。在此基礎上，進一步比對 <strong>CDX API 快取內容</strong> 與 <strong>ArchiveBot WARC 檔</strong>，檢視兩者在存檔完整性上的差異，並探討造成落差的可能因素。</p>
 <p>透過本專題，期望能提出一套可重複應用的新聞存檔編目流程，不僅改善《蘋果新聞網》存檔的檢索可用性，也為數位新聞保存與學術研究提供可行的技術參考。</p>
 <p>This project aims to explore the use of the <strong>CDX API provided by the Internet Archive</strong> to develop a systematic indexing workflow for <em>Apple Daily Taiwan</em>. After the newspaper ceased publication in 2021, its website content gradually disappeared, with preservation efforts largely relying on the Internet Archive and community initiatives such as Archive Team. Although users can still access snapshots via the <strong>Wayback Machine</strong>, systematic retrieval and analysis remain difficult for researchers. Previous attempts by summer interns to build an index from Archive Team’s WARC files revealed significant gaps, leaving more than 300,000 articles uncaptured across two rounds of processing.</p>
 <p>In this study, we employ the <strong>CDX API</strong> to collect snapshot lists of Apple Daily, classifying them by date and section (e.g., Life, International, Entertainment), with a specific focus on <strong>the Local News section between January and August 2022</strong>. We then compare the coverage between <strong>snapshots retrievable via the CDX API</strong> and those stored in <strong>ArchiveBot WARC files</strong>, in order to identify discrepancies in archival completeness and to investigate possible causes such as cross-day captures, robots.txt restrictions, seed scope limitations, and Save Page Now user submissions.</p>
