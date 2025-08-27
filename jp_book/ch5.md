@@ -4,7 +4,7 @@
 透過兩支程式碼爬取下來的連結，並使用 python 進行數量比較
 ```
 
-````{dropdown} example metadata
+````{dropdown} 比較兩張表的差異
 ```python
 import pandas as pd
 
