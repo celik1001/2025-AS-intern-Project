@@ -381,7 +381,6 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
 </ul>
             </nav>
@@ -399,7 +398,7 @@ document.write(`
 <section id="id1">
 <h2>簡介<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
 <p>這支程式的目的是協助使用者獲得特定年月、類別的文章列表，
-透過 Wayback CDX API 與<code class="docutils literal notranslate"><span class="pre">requests</span></code>取得文章 url、Wayback 快取的網址、文章 id，能夠初步查看總共有哪些文章。</p>
+透過 Wayback CDX API 與<code class="docutils literal notranslate"><span class="pre">requests</span></code>取得文章 url、文章 id，能夠初步查看像是https://www.appledaily.com.tw/local/20220801/ 這個網站架構下的所有文章。</p>
 <p>為了加快速度，使用了多執行緒來加快程式運作。</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -414,15 +413,42 @@ document.write(`
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>請先透過命令列或anacoda 安裝jupyter notebook。
-這支程式會使用 <code class="docutils literal notranslate"><span class="pre">requests</span></code>、<code class="docutils literal notranslate"><span class="pre">Beautiful</span> <span class="pre">Soup</span></code>這個套件與 Wayback Machine 做互動。
+這支程式會使用 <code class="docutils literal notranslate"><span class="pre">requests</span></code>這個套件與 Wayback Machine 做互動。
 在開始之前，請透過命令列先安裝以上套件/環境</p>
 </div>
 </section>
-<section id="input">
-<h2>Input<a class="headerlink" href="#input" title="Link to this heading">#</a></h2>
-</section>
 <section id="id2">
 <h2>輸出結果<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">activetime</span><span class="p">:</span> <span class="mi">2025</span><span class="o">-</span><span class="mi">08</span><span class="o">-</span><span class="mi">26</span> <span class="mi">20</span><span class="p">:</span><span class="mi">36</span><span class="p">:</span><span class="mi">48</span>
+<span class="n">output_index</span><span class="p">:</span> <span class="n">output_20250826_203648</span>
+<span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="err">✔</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">appledaily</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">tw</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="mi">20220101</span><span class="o">/</span><span class="mi">4</span><span class="n">C4Q3YRHTZGGBN2YAHLJH4CSQI</span><span class="o">/</span>
+<span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="err">✔</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">appledaily</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">tw</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="mi">20220101</span><span class="o">/</span><span class="n">C4AZKGYVYZDVTPWZ7RPWARUHDY</span><span class="o">/</span>
+<span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="err">✔</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">appledaily</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">tw</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="mi">20220101</span><span class="o">/</span><span class="n">DUS6LUBV2FEHBHZ5R47BG6YCCY</span><span class="o">/</span>
+<span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="err">✔</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">appledaily</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">tw</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="mi">20220101</span><span class="o">/</span><span class="n">C5GNIZT4DNA4DAFUVA5NHKJYDI</span><span class="o">/</span>
+<span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="err">✔</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">appledaily</span><span class="o">.</span><span class="n">com</span><span class="o">.</span><span class="n">tw</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="mi">20220101</span><span class="o">/</span><span class="mi">23</span><span class="n">YFPLCSYZCZPANVI4E2LTW5L4</span><span class="o">/</span>
+<span class="n">already</span> <span class="n">output</span> <span class="n">ninjs</span><span class="o">.</span><span class="n">json</span>
+<span class="n">zipped</span><span class="p">:</span> <span class="n">output_20250826_203648</span><span class="o">.</span><span class="n">zip</span>
+<span class="n">total</span> <span class="mi">0</span> <span class="n">URL</span> <span class="n">skipped</span>
+</pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cost</span><span class="p">:</span> <span class="mf">44.86</span> <span class="n">s</span>
+</pre></div>
+</div>
+<p>最後會輸出成這樣的檔案結構:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>./
+├─ appledaily_local_202201-202205.csv
+├─ appledaily_realtime_202201-202205.csv
+├─ appledaily_entertainment_202201-202205.csv
+├─ appledaily_sports_202201-202205.csv
+├─ appledaily_international_202201-202205.csv
+├─ appledaily_finance_202201-202205.csv
+├─ appledaily_life_202201-202205.csv
+├─ appledaily_forum_202201-202205.csv
+├─ appledaily_ALL_CATEGORIES_202201-202205.csv
+└─ SUMMARY_appledaily_202201-202205.txt
+
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -491,7 +517,6 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
 </ul>
   </nav></div>

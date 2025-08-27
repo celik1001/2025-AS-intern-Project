@@ -381,13 +381,6 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">研究問題概述</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">流程概要</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">API</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">套件</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
-</ul>
-</li>
 </ul>
             </nav>
         </div>
@@ -413,156 +406,63 @@ document.write(`
 </ul>
 <iframe width="800" height="600" src="https://lookerstudio.google.com/embed/reporting/892b2c90-c9a4-4488-a6f7-559739d5a64c/page/crMUF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 <p>那麼，有哪些內容沒被收到呢？
-以<a class="reference external" href="https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/%EF%BC%8C%E5%98%97%E8%A9%A6%E8%A7%80%E5%AF%9F">https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察</a> appledailyTW 的網址結構，可以知道網站結構可能是 ROOT -&gt; 新聞類別 -&gt; 日期 -&gt; 文章獨立 id
-可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。</p>
-<p>因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
-又因 ArchiveTeam 的存檔內容大部分可經由 IA 的 Wayback Machine 存取，因此這邊使用 Wayback CDX API 與 Wayback Machine 互動，透過 BeautifulSoup 來解析、進一步擷取 Wayback Machine 上的網頁存檔內容。</p>
-<p>是以，透過這樣的實驗，希望：</p>
-<ol class="arabic simple">
-<li><p>建立《蘋果新聞網》文章快取的 編目流程</p></li>
-<li><p>以 2022 年 1 月本土版（local）為案例，建立一份文章索引。</p></li>
-<li><p>接著比對 CDX API 快取清單 與 ArchiveBot WARC，檢視存檔完整性差異。</p></li>
-<li><p>探討差異成因。</p></li>
-</ol>
-</section>
-<section id="id3">
-<h2>流程概要<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
-<ul class="simple">
-<li><p>CDX API <a class="reference external" href="http://xn--www-gx3e849d.appledaily.com.tw/*%EF%BC%8C%E6%8C%87%E5%AE%9A%E7%89%88%E9%9D%A2%E3%80%81%E6%97%A5%E6%9C%9F%E5%8D%80%E9%96%93%E3%80%82">抽取www.appledaily.com.tw/*，指定版面、日期區間。</a></p></li>
-<li><p>抽取欄位：timestamp、original、statuscode、mimetype、digest、length。</p></li>
-<li><p>清理 URL（去除參數、斜線）。</p></li>
-<li><p>輸出為 JSON，依 ninjs3.0 標準釋出。<a class="footnote-reference brackets" href="#id7" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p></li>
-<li><p>CDX-only（僅在 CDX 出現，多數為 Save Page Now / IA 抓取）/WARC-only（僅在 WARC 出現，可能因政策隱藏，CDX 不顯示）統計差異數量與比例。</p></li>
-</ul>
-</section>
-<section id="api">
-<h2>API 及套件說明<a class="headerlink" href="#api" title="Link to this heading">#</a></h2>
-<p>以下是相關說明。</p>
-<section id="id5">
-<h3>API<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
-<p><a class="reference external" href="https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server">Wayback CDX api</a>
-用來取得 Wayback Machine 上最新的網頁快取連結。</p>
-</section>
-<section id="id6">
-<h3>套件<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
-<p>網頁爬蟲與擷取 requests → BeautifulSoup 解析 HTML → pandas 整理 → CSV/JSON 存檔 <br>
-大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試 <br>
-網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位 <br>
-分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包</p>
-</section>
-<section id="ninjs3-0">
-<h3>ninjs3.0 範例<a class="headerlink" href="#ninjs3-0" title="Link to this heading">#</a></h3>
-<p>Referance
-<a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/20231008-anti-doping-measures-at-the-tour-down-under-will-be-the-toughest-ever-addb-ninjs-nitf.json">iptc/newsinjson</a>
-<a class="github reference external" href="https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20130731006140.json">iptc/newsinjson</a>
-<a class="reference external" href="https://www.iptc.org/std/ninjs/userguide/#_multimedia_example">https://www.iptc.org/std/ninjs/userguide/#_multimedia_example</a></p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="s2">&quot;uri&quot;</span><span class="p">:</span> <span class="s2">&quot;URL from warc&quot;</span><span class="p">,</span>
-<span class="s2">&quot;standard&quot;</span><span class="p">:</span> <span class="p">{</span>
-<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;ninjs&quot;</span><span class="p">,</span>
-<span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="s2">&quot;3.0&quot;</span><span class="p">,</span>
-<span class="s2">&quot;schema&quot;</span><span class="p">:</span> <span class="s2">&quot;https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json&quot;</span>
-<span class="p">},</span>
-<span class="s2">&quot;firstcreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
-<span class="s2">&quot;versioncreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
-<span class="s2">&quot;contentcreated&quot;</span><span class="p">:</span> <span class="s2">&quot;2024-02-07&quot;</span><span class="p">,</span>
-<span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
-<span class="s2">&quot;language&quot;</span><span class="p">:</span> <span class="s2">&quot;zh-Hant-TW&quot;</span>
-<span class="s2">&quot;headlines&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
-<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;This is Headline&quot;</span>
-<span class="p">}</span>
-<span class="p">],</span>
-<span class="s2">&quot;subjects&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Crime, law and justice&quot;</span>
-<span class="p">}</span>
-<span class="p">],</span>
-<span class="s2">&quot;bodies&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;main&quot;</span><span class="p">,</span>
-<span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;text/plain&quot;</span><span class="p">,</span>
-<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;body content &quot;</span>
-<span class="p">}</span>
-<span class="p">],</span>
-<span class="s2">&quot;associations&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;mainpic&quot;</span><span class="p">,</span>
-<span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
-<span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
-<span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
-<span class="p">}</span>
-<span class="p">],</span>
-<span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./ID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
-<span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+以<a class="reference external" href="https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/%EF%BC%8C%E5%98%97%E8%A9%A6%E8%A7%80%E5%AF%9F">https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察</a> appledailyTW 的網址結構，可以知道網站結構可能是：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ROOT
+├─ 新聞類別
+├─ ├─日期
+├─ ├─日期
+├─ ├─日期
+├─ ├─ ├─ 文章獨立 id
+├─ ├─ ├─ 文章獨立 id
+├─ 新聞類別
+├─ 新聞類別
+├─ 新聞類別
 
-                <span class="p">}</span>
-              <span class="p">]</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-              <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;firstpic&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
-                <span class="p">{</span>
-                      <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
-                <span class="p">}</span>
-              <span class="p">],</span>
-              <span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
-                <span class="p">{</span>
-                  <span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./ID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。
 
-                <span class="p">}</span>
-              <span class="p">]</span>
-        <span class="p">},</span>
-        <span class="p">{</span>
-              <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;secondpic....&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;uri&quot;</span><span class="p">:</span><span class="s2">&quot;URL from warc photo&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;picture&quot;</span><span class="p">,</span>
-              <span class="s2">&quot;headlines&quot;</span> <span class="p">:</span> <span class="p">[</span>
-                <span class="p">{</span>
-                      <span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;picture&#39;s title&quot;</span>
-                <span class="p">}</span>
-              <span class="p">],</span>
-              <span class="s2">&quot;renditions&quot;</span> <span class="p">:</span> <span class="p">[</span>
-                <span class="p">{</span>
-                  <span class="s2">&quot;href&quot;</span> <span class="p">:</span> <span class="s2">&quot;./PID/img/X.jpg (relative path)&quot;</span><span class="p">,</span>
-                  <span class="s2">&quot;contentType&quot;</span><span class="p">:</span> <span class="s2">&quot;image/jpg&quot;</span><span class="p">,</span>
+## Why Wayback CDX api ?
 
-                <span class="p">}</span>
-              <span class="p">]</span>
-        <span class="p">}</span>
+因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
+又因 ArchiveTeam 的存檔內容大部分可經由 IA 的 Wayback Machine 存取，因此這邊使用 Wayback CDX API 與 Wayback Machine 互動，透過 BeautifulSoup 來解析、進一步擷取 Wayback Machine 上的網頁存檔內容。
 
-<span class="p">],</span>
-<span class="s2">&quot;by&quot;</span><span class="p">:</span> <span class="s2">&quot;by whom&quot;</span><span class="p">,</span>
-<span class="s2">&quot;located&quot;</span><span class="p">:</span> <span class="s2">&quot;place name&quot;</span><span class="p">,</span>
-<span class="s2">&quot;altids&quot;</span><span class="p">:</span> <span class="p">[</span>
-<span class="p">{</span>
-<span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;internal&quot;</span><span class="p">,</span>
-<span class="s2">&quot;value&quot;</span><span class="p">:</span> <span class="s2">&quot;TNT3L7GJIB7M3WEDXNIS3MYPGI&quot;</span>
-<span class="p">}</span>
-<span class="p">]</span>
-<span class="p">}</span>
+CDX api 的好處是可以取得文章的最新快取、一次就可以拿到很多文章的快取url。
 
+## 專題目標
+
+是以，透過這樣的實驗，希望：
+
+1. 建立《蘋果新聞網》文章快取的 編目流程
+2. 以 2022 年 1 月本土版（local）為案例，建立一份文章索引。
+3. 接著比對 CDX API 快取清單 與 ArchiveBot WARC，檢視存檔完整性差異。
+4. 探討差異成因。
+
+## 流程概要
+
+- CDX API 抽取www.appledaily.com.tw/*，指定版面、日期區間。
+- 抽取欄位：timestamp、original、statuscode、mimetype、digest、length。
+- 清理 URL（去除參數、斜線）。
+- 輸出為 JSON，依 ninjs3.0 標準釋出。[^1]
+- CDX-only（僅在 CDX 出現，多數為 Save Page Now / IA 抓取）/WARC-only（僅在 WARC 出現，可能因政策隱藏，CDX 不顯示）統計差異數量與比例。
+
+[^1]: ninjs 3.0
+
+## API 及套件說明
+
+以下是相關說明。
+
+### API
+
+[Wayback CDX api](https://github.com/internetarchive/wayback/tree/master/wayback-cdx-server)
+用來取得 Wayback Machine 上最新的網頁快取連結。
+
+### 套件
+
+網頁爬蟲與擷取 requests → BeautifulSoup 解析 HTML → pandas 整理 → CSV/JSON 存檔 &lt;br&gt;
+大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試 &lt;br&gt;
+網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位 &lt;br&gt;
+分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包
 </pre></div>
 </div>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>
-</pre></div>
-</div>
-<hr class="footnotes docutils" />
-<aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id7" role="doc-footnote">
-<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">1</a><span class="fn-bracket">]</span></span>
-<p>ninjs 3.0</p>
-</aside>
-</aside>
-</section>
 </section>
 </section>
 
@@ -631,13 +531,6 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">研究問題概述</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">流程概要</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#api">API 及套件說明</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">API</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">套件</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#ninjs3-0">ninjs3.0 範例</a></li>
-</ul>
-</li>
 </ul>
   </nav></div>
 

@@ -13,11 +13,30 @@
 <iframe width="800" height="600" src="https://lookerstudio.google.com/embed/reporting/892b2c90-c9a4-4488-a6f7-559739d5a64c/page/crMUF" frameborder="0" style="border:0" allowfullscreen sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"></iframe>
 
 那麼，有哪些內容沒被收到呢？
-以https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是 ROOT -> 新聞類別 -> 日期 -> 文章獨立 id
+以https://www.appledaily.com.tw/life/20220101/2DFNWSUWLBBGPKTMETNIG4KIZQ/，嘗試觀察 appledailyTW 的網址結構，可以知道網站結構可能是：
+
+```
+ROOT
+├─ 新聞類別
+├─ ├─日期
+├─ ├─日期
+├─ ├─日期
+├─ ├─ ├─ 文章獨立 id
+├─ ├─ ├─ 文章獨立 id
+├─ 新聞類別
+├─ 新聞類別
+├─ 新聞類別
+
 可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。
+
+## Why Wayback CDX api ?
 
 因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
 又因 ArchiveTeam 的存檔內容大部分可經由 IA 的 Wayback Machine 存取，因此這邊使用 Wayback CDX API 與 Wayback Machine 互動，透過 BeautifulSoup 來解析、進一步擷取 Wayback Machine 上的網頁存檔內容。
+
+CDX api 的好處是可以取得文章的最新快取、一次就可以拿到很多文章的快取url。
+
+## 專題目標
 
 是以，透過這樣的實驗，希望：
 
@@ -51,111 +70,4 @@
 大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試 <br>
 網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位 <br>
 分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包
-
-### ninjs3.0 範例
-
-Referance
-https://github.com/iptc/newsinjson/blob/main/examples/3.0/20231008-anti-doping-measures-at-the-tour-down-under-will-be-the-toughest-ever-addb-ninjs-nitf.json
-https://github.com/iptc/newsinjson/blob/main/examples/3.0/businesswire-newsml-20130731006140.json
-https://www.iptc.org/std/ninjs/userguide/#_multimedia_example
-
-```
-{
-"uri": "URL from warc",
-"standard": {
-"name": "ninjs",
-"version": "3.0",
-"schema": "https://www.iptc.org/std/ninjs/ninjs-schema_3.0.json"
-},
-"firstcreated": "2024-02-07",
-"versioncreated": "2024-02-07",
-"contentcreated": "2024-02-07",
-"type": "text",
-"language": "zh-Hant-TW"
-"headlines": [
-{
-"role": "main",
-"value": "This is Headline"
-}
-],
-"subjects": [
-{
-"name": "Crime, law and justice"
-}
-],
-"bodies": [
-{
-"role": "main",
-"contentType": "text/plain",
-"value": "body content "
-}
-],
-"associations": [
-{
-"name": "mainpic",
-"uri":"URL from warc photo",
-"type":"picture",
-"headlines" : [
-{
-"value": "picture's title"
-}
-],
-"renditions" : [
-{
-"href" : "./ID/img/X.jpg (relative path)",
-"contentType": "image/jpg",
-
-                }
-              ]
-        },
-        {
-              "name": "firstpic",
-              "uri":"URL from warc photo",
-              "type":"picture",
-              "headlines" : [
-                {
-                      "value": "picture's title"
-                }
-              ],
-              "renditions" : [
-                {
-                  "href" : "./ID/img/X.jpg (relative path)",
-                  "contentType": "image/jpg",
-
-                }
-              ]
-        },
-        {
-              "name": "secondpic....",
-              "uri":"URL from warc photo",
-              "type":"picture",
-              "headlines" : [
-                {
-                      "value": "picture's title"
-                }
-              ],
-              "renditions" : [
-                {
-                  "href" : "./PID/img/X.jpg (relative path)",
-                  "contentType": "image/jpg",
-
-                }
-              ]
-        }
-
-],
-"by": "by whom",
-"located": "place name",
-"altids": [
-{
-"role": "internal",
-"value": "TNT3L7GJIB7M3WEDXNIS3MYPGI"
-}
-]
-}
-
-```
-
-```
-
 ```

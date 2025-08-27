@@ -24,6 +24,20 @@ source .venv/bin/activate # 啟動虛擬環境 macOS / Linux
 另外，這支程式會使用`requests`、`Beautiful Soup`這個套件與 Wayback Machine 做互動，在開始之前，也請先安裝。
 ```
 
-## Input
+最後會輸出成這樣的檔案結構
 
-## 輸出結果
+```
+├─ images/                          # 存放所有文章的圖片
+│  ├─ 4C4Q3Y...CSQI/
+│  │  └─ img/                       # 這篇文章的圖片子資料夾
+│  ├─ 23YFPL...TW5L4/
+│  │  └─ img/
+│  ├─ C4AZKG...RUHDY/
+│  │  └─ img/
+│  ├─ C5GNIZ...HJYDI/
+│  │  └─ img/
+│  └─ DUS6LU...6YCCY/
+│     └─ img/
+└─ ninjs.json                       # 匯出的新聞資料（JSON 陣列）
+
+```

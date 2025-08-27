@@ -380,8 +380,6 @@ document.write(`
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
 </ul>
             </nav>
         </div>
@@ -415,12 +413,22 @@ document.write(`
 <p>請先透過命令列或anacoda 安裝jupyter notebook。
 另外，這支程式會使用<code class="docutils literal notranslate"><span class="pre">requests</span></code>、<code class="docutils literal notranslate"><span class="pre">Beautiful</span> <span class="pre">Soup</span></code>這個套件與 Wayback Machine 做互動，在開始之前，也請先安裝。</p>
 </div>
-</section>
-<section id="input">
-<h2>Input<a class="headerlink" href="#input" title="Link to this heading">#</a></h2>
-</section>
-<section id="id2">
-<h2>輸出結果<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p>最後會輸出成這樣的檔案結構</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>├─ images/                          # 存放所有文章的圖片
+│  ├─ 4C4Q3Y...CSQI/
+│  │  └─ img/                       # 這篇文章的圖片子資料夾
+│  ├─ 23YFPL...TW5L4/
+│  │  └─ img/
+│  ├─ C4AZKG...RUHDY/
+│  │  └─ img/
+│  ├─ C5GNIZ...HJYDI/
+│  │  └─ img/
+│  └─ DUS6LU...6YCCY/
+│     └─ img/
+└─ ninjs.json                       # 匯出的新聞資料（JSON 陣列）
+
+</pre></div>
+</div>
 </section>
 </section>
 
@@ -480,8 +488,6 @@ document.write(`
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">簡介</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#input">Input</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">輸出結果</a></li>
 </ul>
   </nav></div>
 
