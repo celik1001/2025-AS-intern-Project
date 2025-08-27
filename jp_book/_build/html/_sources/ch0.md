@@ -10,7 +10,7 @@
 以 NINJS3.0 標準[^4]整理 Archive Team 所保存的 WARC file，使其成為易檢索的新聞目錄資料庫。[^5]
 
 [^1]: 參見 Apple Daily. Archive Team Wiki. https://wiki.archiveteam.org/index.php/Apple_Daily#Apple%20Daily%20Taiwan
-[^2]: WARC 格式
+[^2]: WARC（Web ARChive）檔案格式是由 Internet Archive 所制定，用於儲存網際網路檔案。參見：https://iipc.github.io/warc-specifications/specifications/warc-format/warc-1.1/
 [^3]: ArchiveBot. Archive Team Wiki. https://wiki.archiveteam.org/index.php/ArchiveBot
-[^4]:
-[^5]: 參見：當代的孤兒報刊：網頁保存、研究資料、以及未來展望，COSCUP，https://pretalx.coscup.org/coscup-2025/talk/EJDGTD/。
+[^4]: ninJS 是由 ITPC（International Press Telecommunications Council）發布的新聞資料交換格式，詮釋資料採用 JSON 儲存，優點是輕量、便於資料交換，參見：https://iptc.org/standards/ninjs/
+[^5]: 參見：當代的孤兒報刊：網頁保存、研究資料、以及未來展望，COSCUP2025，https://pretalx.coscup.org/coscup-2025/talk/EJDGTD/。
