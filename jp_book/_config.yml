@@ -4,6 +4,7 @@
 title: Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引
 Research and Implementation of Web Archive Indexing: Building an Apple Daily Catalogue with the CDX API
 author: Celik1001
+copyright: 2025
 logo: logo.png
 
 # Force re-execution of notebooks on each build.
