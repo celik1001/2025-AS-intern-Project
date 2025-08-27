@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>歡迎！ &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
+    <title>結語 &#8212; Web Archive 編目的研究與實作：以 Wayback CDX API 建立《蘋果新聞網》索引</title>
   
   
   
@@ -57,10 +57,9 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'ch6';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="專題題目" href="summary.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -143,7 +142,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="index.html">
   
   
   
@@ -174,8 +173,8 @@
     <div class="bd-toc-item navbar-nav active">
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1 current active">
-                <a class="reference internal" href="#">
+            <li class="toctree-l1">
+                <a class="reference internal" href="index.html">
                     歡迎！
                 </a>
             </li>
@@ -257,7 +256,7 @@
       
       
       
-      <li><a href="https://github.com/celik1001/2025-AS-intern-Project.git/issues/new?title=Issue%20on%20page%20%2Findex.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/celik1001/2025-AS-intern-Project.git/issues/new?title=Issue%20on%20page%20%2Fch6.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -287,7 +286,7 @@
       
       
       
-      <li><a href="_sources/index.md" target="_blank"
+      <li><a href="_sources/ch6.md" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -369,7 +368,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>歡迎！</h1>
+    <h1>結語</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -384,17 +383,18 @@ document.write(`
                 <article class="bd-article">
                   
   <section class="tex2jax_ignore mathjax_ignore" id="id1">
-<h1>歡迎！<a class="headerlink" href="#id1" title="Link to this heading">#</a></h1>
-<blockquote>
-<div><p>這是暑期實習生張維芹在 2025 年中央研究院資訊科學研究所 Depositar 研究資料寄存所 的專題作品。</p>
-</div></blockquote>
-<p>文件服用建議</p>
-<ul class="simple">
-<li><p>建議有一些命令列(CLI)基礎</p></li>
-<li><p>若有任何問題，可以透過<a class="reference external" href="https://github.com/celik1001">github</a>找到我</p></li>
-</ul>
-<div class="toctree-wrapper compound">
-</div>
+<h1>結語<a class="headerlink" href="#id1" title="Link to this heading">#</a></h1>
+<p>經過測試後發現，由 Archive Team 整理的 WARC file 文章數量相較於 Internet Archive Wayback Machine CDX api 爬蟲相對少，可能是因為兩者爬蟲時間點的差異，或許這也說明了網站的數位保存是一個日常就要做的功課。</p>
+<p>不過，這種方法比較適合具備結構簡單的網頁，如果結構較複雜，這種方法就不太可行了。
+另外，也因為請求量比較大，測試過程中會比較常出現<code class="docutils literal notranslate"><span class="pre">HTTPSConnectionPool(host='web.archive.org',</span> <span class="pre">port=443):</span> <span class="pre">Read</span> <span class="pre">timed</span> <span class="pre">out.</span> <span class="pre">(read</span> <span class="pre">timeout=20)</span></code>的情形，可以拉長 timeout，或是加上重試機制。</p>
+<p>透過 Wayback Machine CDX api 結合爬蟲，使用者能更快、更容易取得不同年份的文章索引查詢；此外，使用這個 api 作人文研究也有一定的社群資源學習，適合程式入門的人文研究者。<a class="footnote-reference brackets" href="#id3" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a></p>
+<hr class="footnotes docutils" />
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id3" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">1</a><span class="fn-bracket">]</span></span>
+<p>Sherratt, Tim. GLAM-Workbench/Web-Archives. Version v1.2.0. 2023. <a class="reference external" href="https://doi.org/10.5281/zenodo.7898218">https://doi.org/10.5281/zenodo.7898218</a>.</p>
+</aside>
+</aside>
 </section>
 
     <script type="text/x-thebe-config">
@@ -427,15 +427,6 @@ document.write(`
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
-    <a class="right-next"
-       href="summary.html"
-       title="next page">
-      <div class="prev-next-info">
-        <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">專題題目</p>
-      </div>
-      <i class="fa-solid fa-angle-right"></i>
-    </a>
 </div>
                 </footer>
               

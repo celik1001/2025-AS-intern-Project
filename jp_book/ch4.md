@@ -1,6 +1,6 @@
 # Output
 
-將擷取的內容轉成 ninjs3.0
+將擷取的內容轉成 ninjs3.0 JSON
 
 ### ninjs3.0 範例
 

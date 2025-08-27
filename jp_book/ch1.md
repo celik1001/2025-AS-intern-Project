@@ -26,6 +26,7 @@ ROOT
 ├─ 新聞類別
 ├─ 新聞類別
 ├─ 新聞類別
+```
 
 可以看出 appledaily 的網頁架構是具備一定結構的，因此試著補回原資料集，是本次的專題目標。
 
@@ -34,24 +35,22 @@ ROOT
 因為能夠做的時間有限，希望能夠快速檢驗文章的目錄收集數量以及未收錄的內容。
 又因 ArchiveTeam 的存檔內容大部分可經由 IA 的 Wayback Machine 存取，因此這邊使用 Wayback CDX API 與 Wayback Machine 互動，透過 BeautifulSoup 來解析、進一步擷取 Wayback Machine 上的網頁存檔內容。
 
-CDX api 的好處是可以取得文章的最新快取、一次就可以拿到很多文章的快取url。
+CDX api 的好處是可以取得文章的最新快取、一次就可以拿到很多文章的快取 url。
 
 ## 專題目標
 
 是以，透過這樣的實驗，希望：
 
 1. 建立《蘋果新聞網》文章快取的 編目流程
-2. 以 2022 年 1 月本土版（local）為案例，建立一份文章索引。
+2. 以 2022 年 1 月本土版（local）為案例，以 JSON 格式建立一份文章索引。
 3. 接著比對 CDX API 快取清單 與 ArchiveBot WARC，檢視存檔完整性差異。
-4. 探討差異成因。
 
 ## 流程概要
 
 - CDX API 抽取www.appledaily.com.tw/*，指定版面、日期區間。
 - 抽取欄位：timestamp、original、statuscode、mimetype、digest、length。
-- 清理 URL（去除參數、斜線）。
+- 清理 URL（去除?utm 參數、斜線）。
 - 輸出為 JSON，依 ninjs3.0 標準釋出。[^1]
-- CDX-only（僅在 CDX 出現，多數為 Save Page Now / IA 抓取）/WARC-only（僅在 WARC 出現，可能因政策隱藏，CDX 不顯示）統計差異數量與比例。
 
 [^1]: ninjs 3.0
 
@@ -70,4 +69,3 @@ CDX api 的好處是可以取得文章的最新快取、一次就可以拿到很
 大量 URL ThreadPoolExecutor → 針對失敗加 time.sleep 重試 <br>
 網址處理 用 urlparse 取得 domain 當成文章 id 或輸出欄位 <br>
 分日輸出 datetime.strftime 日期目錄 → os.makedirs 建資料夾 → 完成之後用 zipfile 打包
-```
